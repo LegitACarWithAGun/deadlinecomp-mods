@@ -36,6 +36,10 @@ for _, name in pairs(dlcomp_referees) do
 	command_bot.toggle_admin(name, true)
 end
 
+-- UPSTREAM BUG: the only way to read chat messages always reports them coming from the first person in the player list
+-- just let everyone run chat commands until that is fixed
+command_bot.toggle_command_permissions(false)
+
 
 -- qol sharedvars
 sharedvars.gm_team_balancing_threshold = 9999
