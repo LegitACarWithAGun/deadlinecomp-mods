@@ -10,6 +10,7 @@ end
 
 
 local geneva = shared.dlcomp_geneva
+local setup_reader = shared.dlcomp_setup_reader
 
 -- ruleset
 geneva.set_banned_weapons({
@@ -19,6 +20,44 @@ geneva.set_banned_weapons({
 	-- "F1",
 })
 geneva.set_max_grenades(1)
+
+local KF416_problem_stocks = {
+	"ar_tr2_stock",
+	"hera_arms_cqr_gen1_pistol_grip_stock",
+	"thordsen_frs_15_stock",
+	"kf_416c_type_2_buttstock",
+}
+geneva.set_custom_rules({
+	{
+		name = "KF416 stock stacking",
+		callback = function(player: player, context: geneva_context)
+			for slot_name, weapon in geneva.iter_slots(player) do
+				if weapon.type == "throwable" then
+					continue
+				end
+
+				local client_data = weapon.client_data
+				if client_data.name ~= "KF416" then
+					continue
+				end
+
+				local root_node = setup_reader.parse_setup(client_data.setup)
+				local stocks_found = 0
+				for _, stock_name in pairs(KF416_problem_stocks) do
+					if not setup_reader.find_first(root_node, stock_name) then
+						continue
+					end
+					stocks_found += 1
+				end
+
+				if stocks_found >= 2 then
+					player.set_weapon(slot_name, "nothing")
+					context.feedback[slot_name] = "KF416 stock stacking"
+				end
+			end
+		end
+	}
+})
 
 -- behavior
 geneva.should_announce_equipment_cleaning(true)
