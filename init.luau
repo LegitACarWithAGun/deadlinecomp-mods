@@ -26,6 +26,10 @@ if not shared.dlcomp_geneva then
     require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/geneva.luau")
 end
 
+if not shared.dlcomp_setup_reader then
+    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/setup-reader.luau")
+end
+
 -- load round command
 if not shared.dlcomp_round then
     require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/round.luau")

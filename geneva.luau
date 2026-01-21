@@ -4,6 +4,10 @@
 -- - gun = firearms and rpgs, everything thats in slots 1 and 2
 -- - utility = grenades and knives, everything thats in slots 3 and 4, internally called `throwable`
 
+-- load command bot
+if not shared.dlcomp_command_bot then
+    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/command-bot.luau")
+end
 -- load arg parser module
 if not shared.dlcomp_parser then
     require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/arg-parser.luau")
@@ -14,9 +18,10 @@ if not shared.dlcomp_table then
 end
 
 -- rules
-local banned_weapon_list = {}
-local max_equippable_grenades = 2
-local limited_utility = {"F1", "M67"} -- these count towards max_equippable_grenades
+local banned_weapon_list: {string} = {}
+local max_equippable_grenades: number = 2
+local limited_utility: {string} = {"F1", "M67"} -- these count towards max_equippable_grenades
+local custom_rules: {custom_geneva_rule} = {}
 
 -- behaviour
 local enforce_rules = true -- whether the rules are active
@@ -24,14 +29,6 @@ local announce_equipment_cleaning = true -- announces in chat what equipment was
 
 -- constants
 local slot_order = {"primary", "secondary", "throwable1", "throwable2"}
-local slot_empty = "nothing"
-
-type cleaning_context = {
-    -- warning/info about the loadout, key being the slot name
-    feedback: {[string]: string},
-    -- how many more grenades the player can have
-    allowed_nades_left: number,
-}
 
 do -- human-facing command-line stuff
 
@@ -44,6 +41,10 @@ do -- human-facing command-line stuff
         end
 
         banned_weapon_list = new_bans
+    end
+
+    function set_custom_rules(new_rules: {custom_geneva_rule})
+        custom_rules = new_rules
     end
 
     function set_max_grenades(max_grenades: number)
@@ -85,17 +86,50 @@ do -- human-facing command-line stuff
             return
         end
 
-        local banned_weapons = #banned_weapon_list > 0 and table.concat(banned_weapon_list, ", ") or "none"
+        local format_list = function(list: {string}): string
+            return #list > 0 and table.concat(list, ", ") or "none"
+        end
 
         chat.send_announcement("ACTIVE GENEVA RULESET:")
-        chat.send_announcement(`banned weapons: {banned_weapons}`)
-        chat.send_announcement(`max equippable grenades: {max_equippable_grenades}`)
+        chat.send_announcement(`- banned weapons: { format_list(banned_weapon_list) }`)
+        chat.send_announcement(`- max equippable grenades: {max_equippable_grenades}`)
+
+        local custom_rule_names = {}
+        for _, rule in pairs(custom_rules) do
+            table.insert(custom_rule_names, rule.name)
+        end
+        chat.send_announcement(`- custom rules: { format_list(custom_rule_names) }`)
     end
 end
 
+do -- helper functions
+    --- iterate over every filled slot in the player's inventory, returning slot_name and weapon_data
+    function iter_slots(player: player)
+        local slot_index = 1
+        return function()
+
+            while (slot_index <= #slot_order) do
+                local slot_name = slot_order[slot_index]
+                local slot_data = player.get_weapon_data_from_character(slot_name)
+
+                slot_index += 1
+                if slot_data == nil then
+                    continue
+                end
+                return slot_name, slot_data
+            end
+            
+            return nil
+        end
+    end
+end
 
 do -- implementation
     function format_feedback(feedback: {[string]: string}): string?
+        if not announce_equipment_cleaning then
+            return nil
+        end
+
         local formatted_list = {}
 
         -- convert the map into an array
@@ -114,7 +148,7 @@ do -- implementation
         return table.concat(formatted_list, ", ")
     end
 
-    function handle_slot(player: any, slot_name: string, slot_bans: {string}, context: cleaning_context)
+    function handle_slot(player: player, slot_name: string, slot_bans: {string}, context: geneva_context)
         local equipment = player.get_weapon_data_from_character(slot_name)
         if not equipment then
             return
@@ -126,20 +160,16 @@ do -- implementation
 
         -- check if weapon is banned
         if table.find(slot_bans, equipment_name) then
-            if announce_equipment_cleaning then
-                context.feedback[slot_name] = `{equipment_name} is banned`
-            end
-            player.set_weapon(slot_name, slot_empty)
+            context.feedback[slot_name] = `{equipment_name} is banned`
+            player.set_weapon(slot_name, "nothing")
             return
         end
 
         -- allowed to only carry a limited amount of this type of weapon
         if table.find(limited_utility, equipment_name) then
             if context.allowed_nades_left <= 0 then
-                if announce_equipment_cleaning then
-                    context.feedback[slot_name] = `max {max_equippable_grenades} grenades`
-                end
-                player.set_weapon(slot_name, slot_empty)
+                context.feedback[slot_name] = `max {max_equippable_grenades} grenades`
+                player.set_weapon(slot_name, "nothing")
                 return
             end
             context.allowed_nades_left -= 1
@@ -153,7 +183,7 @@ do -- implementation
         end
 
         local player = players.get(player_name)
-        local context: cleaning_context = {
+        local context: geneva_context = {
             feedback = {},
             allowed_nades_left = max_equippable_grenades,
         }
@@ -165,6 +195,11 @@ do -- implementation
                 banned_weapon_list,
                 context
             )
+        end
+
+        -- apply custom rules
+        for _, rule in pairs(custom_rules) do
+            rule.callback(player, context)
         end
 
         -- print feedback
@@ -197,9 +232,12 @@ shared.dlcomp_geneva = {
     toggle_rules = toggle_rules,
     set_banned_weapons = set_banned_weapons,
     set_max_grenades = set_max_grenades,
-    -- behaviour
+    set_custom_rules = set_custom_rules,
+    -- behavior
     should_announce_equipment_cleaning = should_announce_equipment_cleaning,
     -- information, entierly human-facing
     print_known_weapons = print_known_weapons,
     announce_ruleset = announce_ruleset,
+    -- helper functions
+    iter_slots = iter_slots,
 }
