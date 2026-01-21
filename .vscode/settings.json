@@ -1,18 +1,35 @@
 {
-    "luau-lsp.types.definitionFiles": [
-		"./deadline-types/shared/shared-types.d.luau",
-        "./deadline-types/shared/shared-globals.d.luau",
-        "./deadline-types/shared/sharedvars.d.luau",
-        "./deadline-types/server/server-globals.d.luau",
-        
-		// comment this one out when not actively doing stuff on client scripts, overrides some server globals
-		// "./deadline-types/client/client-globals.d.luau",
-
-		"./_interface.d.luau",
-    ],
+	"luau-lsp.completion.imports.suggestServices": false,
     "luau-lsp.sourcemap.enabled": false,
 	// "luau-lsp.fflags.enableNewSolver": true,
-	"luau-lsp.types.disabledGlobals": [ // generated using ./deadline-types/src/disabled_globals.luau, need to manually copy these over every time theyre updated currently
+
+	// ^^^^ OPTIONAL ^^^^^
+	// -----------------
+	// vvvv MANDATORY vvvv
+
+	// adds default roblox types And globals, see luau-lsp.types.disabledGlobals for all the globals that arent used
+	"luau-lsp.platform.type": "roblox",
+	
+	// type files for deadline types and globals
+	"luau-lsp.types.definitionFiles": {
+		// shared
+		"deadline-shared-types": "./deadline-types/shared/shared-types.d.luau",
+        "deadline-shared-globals": "./deadline-types/shared/shared-globals.d.luau",
+        "deadline-shared-vars": "./deadline-types/shared/sharedvars.d.luau",
+
+		// server
+        "deadline-server-globals": "./deadline-types/server/server-globals.d.luau",
+        
+		// client
+		"deadline-client-keybind-names": "./deadline-types/client/keybind_name.d.luau",
+		// comment this one out when not actively doing stuff on client scripts, overrides some server globals
+		// "client-globals": "./deadline-types/client/client-globals.d.luau",
+
+		"dlcomp-interface": "./_interface.d.luau",
+	},
+
+	// generated using ./src/disabled_globals.luau
+	"luau-lsp.types.disabledGlobals": [
 		"CatalogSearchParams",
 		"Content",
 		"DateTime",
