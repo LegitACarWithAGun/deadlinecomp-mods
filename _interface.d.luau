@@ -54,9 +54,16 @@ declare shared: {
 		remaining_strings: (args: string) -> {string}
 	},
 	dlcomp_table: {
-		get_page: <T>(list: {T}, page_length: number, want_page: number) -> ({T}, number),
-		in_filter: <T>(values: {T}, filter: {T}) -> {T},
-		not_in_filter: <T>(values: {T}, filter: {T}) -> {T},
+		get_page: <T>(arr: {T}, page_length: number, want_page: number) -> ({T}, number),
+		filter: <T>(tbl: {T}, callback: (T) -> boolean) -> {T},
+		in_filter: <T>(tbl: {T}, filter: {T}) -> {T},
+		not_in_filter: <T>(tbl: {T}, filter: {T}) -> {T},
+		scramble: <T>(arr: {T}) -> {T},
+		contains: <T>(tbl: {T}, value: T) -> boolean,
+		partial_match: (haystack: {string}, needle: string) -> {string},
+		remove_value: <T>(tbl: {T}, value: T) -> (),
+		append_unique: <T>(tbl: {T}, value: T) -> (),
+		transform_values: <T, N>(tbl: {T}, callback: (value: T) -> N) -> {N},
 	},
 	dlcomp_string: {
 		trim_start: (str: string) -> string,
