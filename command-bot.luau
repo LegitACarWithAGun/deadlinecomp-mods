@@ -69,6 +69,21 @@ function toggle_command_permissions(toggle: boolean?)
     print(`command_permissions = {as_bool}`)
 end
 
+function construct_command_call_info(sender, channel, raw): command_call_info?
+    -- get the player object of the caller
+    local caller = players.get(sender)
+    if not caller then
+        chat.send_announcement(`cant get player object from username [{sender}]`)
+        return nil
+    end
+
+    return {
+        caller = caller,
+        message_channel = channel,
+        raw_message = raw,
+    }
+end
+
 -- listen for messages in chat
 chat.player_chatted:Connect(function(sender, channel, content)
     local raw_message = content
@@ -107,12 +122,11 @@ chat.player_chatted:Connect(function(sender, channel, content)
         return
     end
 
-    -- construct command_call_info
-    local extra: command_call_info = {
-        caller = caller,
-        message_channel = channel,
-        raw_message = raw_message,
-    }
+    -- generate extra info
+    local extra = construct_command_call_info(sender, channel, raw_message)
+    if not extra then
+        return
+    end
 
     -- execute command
     local success, result = pcall(command_info.callback, command_args, extra)
@@ -131,6 +145,7 @@ end)
 
 
 -- built in commands
+-- TODO: page this
 add_command("help", "prints this message", function(args: string)
     local results = {}
     for _, info in pairs(commands) do
