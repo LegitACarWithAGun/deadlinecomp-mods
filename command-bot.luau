@@ -115,7 +115,12 @@ chat.player_chatted:Connect(function(sender, channel, content)
     }
 
     -- execute command
-    local result = command_info.callback(command_args, extra)
+    local success, result = pcall(command_info.callback, command_args, extra)
+    if not success then
+        chat.send_announcement(`ERROR: {result}`)
+        warn(`error on command-bot command [{command_info.name}]: {result}`)
+        return
+    end
     if result ~= nil then
         chat.send_announcement(result)
     end
