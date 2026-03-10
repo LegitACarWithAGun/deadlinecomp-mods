@@ -9,10 +9,15 @@ if not shared.dlcomp_string then
     require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/string.luau")
 end
 
--- text that will return true if passed to get_bool
+-- text that will get coereced into a boolean if passed to get_bool
 -- keep entries lowercase
 local true_text = {"true", "t", "on", "enable", "1"}
 local false_text = {"false", "f", "off", "disable", "0"}
+
+-- text that will get coerced into a team id ("attacker" | "defender") if passed to get_team
+-- keep entries lowercase
+local anto_text = {"anto", "attacker"}
+local syno_text = {"syno", "defender"}
 
 -- creates a new parse_info instance, just for convenience
 -- see _interface.d.luau for the command_parse_info interface
@@ -109,9 +114,40 @@ function get_player(args: string, match_exact: boolean?): (player?, command_pars
     return matched_player, info
 end
 
+-- treats the next argument as a team id,
+-- will return nil if it cant find the team, but the returned info will still remove the section
+function get_team(args: string): (team_id?, command_parse_info)
+    local want_team, info = get_string(args)
+    want_team = string.lower(want_team)
+
+    if table.find(anto_text, want_team) then
+        return "attacker", info
+    end
+    if table.find(syno_text, want_team) then
+        return "defender", info
+    end
+
+    return nil, info
+end
+
+function remaining_strings(args: string): {string}
+    local output = {}
+    local remaining = args
+    while remaining ~= "" do
+        local section, info = get_string(remaining)
+        table.insert(output, section)
+        remaining = info.remaining_text
+    end
+    
+    return output
+end
+
 shared.dlcomp_parser = {
     get_string = get_string,
     get_number = get_number,
     get_bool = get_bool,
     get_player = get_player,
+    get_team = get_team,
+
+    remaining_strings = remaining_strings,
 }

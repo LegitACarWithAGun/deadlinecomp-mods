@@ -40,7 +40,7 @@ export type setup_node = {
 declare shared: {
 	[string]: any,
 	dlcomp_command_bot: {
-		add_command: (name: string, explanation: string, callback: (args: string, extra: command_call_info) -> string?) -> nil,
+		add_command: (name: string, explanation: string, callback: (args: string, extra: command_call_info) -> string?) -> (),
 		toggle_admin: (player_name: string, toggle: boolean?) -> (boolean, string),
 		toggle_command_permissions: (toggle: boolean?) -> (),
 		admin_list: {string}
@@ -50,6 +50,8 @@ declare shared: {
 		get_number: (args: string, default: number?, min: number?, max: number?) -> (number?, command_parse_info),
 		get_bool: (args: string) -> (boolean?, command_parse_info),
 		get_player: (args: string, match_exact: boolean?) -> (player?, command_parse_info),
+		get_team: (args: string) -> (team_id?, command_parse_info),
+		remaining_strings: (args: string) -> {string}
 	},
 	dlcomp_table: {
 		get_page: <T>(list: {T}, page_length: number, want_page: number) -> ({T}, number),

@@ -28,18 +28,8 @@ shared.dlcomp_command_bot.add_command("cam", "changes the player's cam mode. for
 end)
 
 shared.dlcomp_command_bot.add_command("rand", "selects a random value from the argument list", function(args: string, extra: command_call_info)
-	-- get all args
-	local arg_list = {}
-	while true do
-		local cur_arg, info = shared.dlcomp_parser.get_string(args)
-		if cur_arg == "" then
-			break
-		end
-
-		table.insert(arg_list, cur_arg)
-		args = info.remaining_text
-	end
-
+	-- gather args
+	local arg_list = shared.dlcomp_parser.remaining_strings(args)
 	if #arg_list < 2 then
 		return `please include atleast 2 arguments, seperated by whitespace`
 	end
