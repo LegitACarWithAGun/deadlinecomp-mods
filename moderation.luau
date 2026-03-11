@@ -9,7 +9,7 @@ if not shared.dlcomp_parser then
     require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/arg-parser.luau")
 end
 
-local banned_players = {}
+local banned_players: {string} = {}
 
 shared.dlcomp_command_bot.add_command("ban", "bans a player from the server", function(args: string)
 	local player, _ = shared.dlcomp_parser.get_player(args)
@@ -23,29 +23,22 @@ shared.dlcomp_command_bot.add_command("ban", "bans a player from the server", fu
 end)
 
 shared.dlcomp_command_bot.add_command("unban", "unbans a player from the server", function(args: string)
-	local want_name, _ = shared.dlcomp_parser.get_string(args)
+	local username_input, _ = shared.dlcomp_parser.get_string(args)
 
-	-- partial match with banned_players
-	local index
-	for i, name in pairs(banned_players) do
-		if not string.match(name, want_name) then
-			continue
-		end
-
-		if index ~= nil then
-			return `multiple banned players match the input [{want_name}]`
-		end
-		index = i
+	local match_list = shared.dlcomp_table.partial_match(banned_players, username_input)
+	if #match_list ~= 1 then
+		return `unclear target player [{username_input}]`
 	end
+	local selected = match_list[1]
 
-	local full_name = table.remove(banned_players, index)
-	return `unbanned [{full_name}]`
+	shared.dlcomp_table.remove_value(banned_players, selected)
+	return `unbanned [{selected}]`
 end)
 
 shared.dlcomp_command_bot.add_command("kick", "kicks a person from the server", function(args: string)
-	local player, _ = shared.dlcomp_parser.get_player(args)
+	local player, info = shared.dlcomp_parser.get_player(args)
 	if not player then
-		return "unclear target player"
+		return `unclear target player [{info.converted_from}]`
 	end
 	player.kick()
 	return `kicked {player.name}`
@@ -55,29 +48,37 @@ shared.dlcomp_command_bot.add_command("kick_except", "kicks everyone except admi
 	-- dont allow admins to get kicked
 	local exception_list = table.clone(shared.dlcomp_command_bot.admin_list)
 
-	-- add all the custom exceptions
+	-- collect user-specified exceptions
 	while true do
 		local player, info = shared.dlcomp_parser.get_player(args)
-		if player == nil then
+
+		if info.converted_from == "" then
+			-- no more inputs
 			break
+		end
+		if player == nil then
+			-- dont know who theyre reffering to
+			chat.send_announcement(`unclear player: [{info.converted_from}]`)
+			continue
 		end
 
 		table.insert(exception_list, player.name)
 		args = info.remaining_text
 	end
 
-	-- kick anyone who isnt in the exception list
-	local amount_kicked = 0
-	for _, player in pairs( players.get_all() ) do
-		if table.find(exception_list, player.name) then
-			continue
-		end
+	-- get all players not in the exception list
+	local to_kick = shared.dlcomp_table.filter(players.get_all(), function(player: player): boolean
+		return not shared.dlcomp_table.contains(exception_list, player.name)
+	end)
 
+	-- kick them
+	info("kicking players:")
+	for _, player in to_kick do
 		player.kick()
-		amount_kicked += 1
+		print(`- {player.name}`)
 	end
 
-	return `kicked {amount_kicked} players`
+	return `kicked {#to_kick} players`
 end)
 
 shared.dlcomp_command_bot.add_command("respawn", "respawns a player if theyre alive", function(args: string)
@@ -94,7 +95,7 @@ shared.dlcomp_command_bot.add_command("respawn", "respawns a player if theyre al
 	end
 end)
 
-shared.dlcomp_command_bot.add_command("kill", "kills a player", function(args: string)
+shared.dlcomp_command_bot.add_command("kill", "kills a specific player", function(args: string)
 	local player, _ = shared.dlcomp_parser.get_player(args)
 	if not player then
 		return "unclear target player"
@@ -105,13 +106,14 @@ shared.dlcomp_command_bot.add_command("kill", "kills a player", function(args: s
 end)
 
 -- kick any banned players that try to rejoin
-on_player_joined:Connect(function(player_name: string)
-	if not table.find(banned_players, player_name) then
+on_player_joined:Connect(function(username: string)
+	if not table.find(banned_players, username) then
 		return
 	end
 
-	local player = players.get(player_name)
+	local player = players.get(username)
 	if not player then
+		error(`failed to get the player object of a rejoining banned player [{username}]`)
 		return
 	end
 
