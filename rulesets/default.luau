@@ -18,6 +18,19 @@ geneva.set_banned_weapons({
 	"PSRL",
 	"M67",
 	-- "F1",
+
+	-- temp bans
+	"M8HC",
+	"RGD2",
+	"M84",
+	"Zarya3",
+
+	-- unaccessible in UI
+	"Molotov",
+	"Crayon",
+	"Turret",
+	"PlacingTool",
+	"StarterCharacter", -- ?
 })
 geneva.set_max_grenades(1)
 
