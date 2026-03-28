@@ -1,7 +1,7 @@
 {
 	"luau-lsp.completion.imports.suggestServices": false,
     "luau-lsp.sourcemap.enabled": false,
-	// "luau-lsp.fflags.enableNewSolver": true,
+	"luau-lsp.fflags.enableNewSolver": true,
 
 	// ^^^^ OPTIONAL ^^^^^
 	// -----------------
@@ -32,7 +32,6 @@
 	"luau-lsp.types.disabledGlobals": [
 		"CatalogSearchParams",
 		"Content",
-		"DateTime",
 		"DockWidgetPluginGuiInfo",
 		"FloatCurveKey",
 		"Font",
@@ -52,8 +51,6 @@
 		"TweenInfo",
 		"UserSettings",
 		"assert",
-		"bit32",
-		"buffer",
 		"collectgarbage",
 		"corutine",
 		"debug",
@@ -62,10 +59,8 @@
 		"game",
 		"gcinfo",
 		"getfenv",
-		"ipairs",
 		"loadstring",
 		"newproxy",
-		"next",
 		"plugin",
 		"printidentity",
 		"rawequal",
@@ -73,14 +68,12 @@
 		"rawlen",
 		"rawset",
 		"script",
-		"select",
 		"setfenv",
 		"settings",
 		"spawn",
 		"stats",
 		"typeof",
 		"unpack",
-		"vector",
 		"version",
 		"workspace",
 		"ypcall",
