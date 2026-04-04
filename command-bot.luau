@@ -13,6 +13,12 @@ end
 if not shared.dlcomp_parser then
     require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/arg-parser.luau")
 end
+if not shared.dlcomp_table then
+    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/table.luau")
+end
+if not shared.dlcomp_string then
+    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/string.luau")
+end
 
 local prefix = ";"
 local commands: {[string]: command_data} = {}
@@ -38,6 +44,7 @@ function add_command(name: string, explanation: string, callback: command_callba
     }
 end
 
+-- returns (is_changed, message)
 function toggle_admin(player_name: string, toggle: boolean?): (boolean, string)
     -- is the target player already a admin?
     local existing_index = table.find(admin_list, player_name)
@@ -69,12 +76,11 @@ function toggle_command_permissions(toggle: boolean?)
     print(`command_permissions = {as_bool}`)
 end
 
-function construct_command_call_info(sender, channel, raw): command_call_info?
+function construct_command_call_info(sender, channel, raw): command_call_info
     -- get the player object of the caller
     local caller = players.get(sender)
     if not caller then
-        chat.send_announcement(`cant get player object from username [{sender}]`)
-        return nil
+        error(`cant get player object from username [{sender}]`)
     end
 
     return {
@@ -84,58 +90,76 @@ function construct_command_call_info(sender, channel, raw): command_call_info?
     }
 end
 
--- listen for messages in chat
-chat.player_chatted:Connect(function(sender, channel, content)
-    local raw_message = content
+function split_by_first_whitespace(input: string): (string, string)
+    local before = string.match(input, "^%S+") or ""
+    local after = string.sub(input, before:len()+2)
+    return before, after
+end
 
-    -- check if the message has the command prefix
-    if content:sub(1, prefix:len()) ~= prefix then
-        return
+function can_execute_command(command: command_data, username: string): boolean
+    if not command_permissions then
+        return true
     end
-    -- remove the command prefix
-    content = content:sub(prefix:len()+1)
-
     -- only let admins execute commands
-    if command_permissions and not table.find(admin_list, sender) then
-        chat.send_announcement(`only admins can execute commands. you are [{sender}]`)
-        print(`admins: {table.concat(admin_list, "; ")}`)
-        return
+    if not table.find(admin_list, username) then
+        return false
     end
+    return true
+end
 
-    -- treat everything before the next whitespace as the command name
-    local command_name = string.match(content, "^%S+") or ""
-
-    -- attempt to find command from name
-    local command_info = commands[command_name]
-    if not command_info then
-        chat.send_announcement(`no command with name [{command_name}]`)
-        return
+-- attempt to find command info from input, and return rest of input as args
+function gather_command_from_string(input: string): (command_data, string)
+    local command_name, command_args = split_by_first_whitespace(input)
+    local command = commands[command_name]
+    if not command then
+        error(`no command with name [{command_name}]`)
     end
+    return command, command_args
+end
 
-    -- leave the rest of the user input raw, and let the callback deal with it
-    local command_args = string.sub(content, command_name:len()+2)
+-- input can not have a prefix
+function attempt_execute_as(input: string, extra: command_call_info): string?
+    -- get command info and args from input text
+    local command, command_args = gather_command_from_string(input)
 
-    -- get the player object of the caller
-    local caller = players.get(sender)
-    if not caller then
-        chat.send_announcement(`cant get player object from username [{sender}]`)
-        return
-    end
-
-    -- generate extra info
-    local extra = construct_command_call_info(sender, channel, raw_message)
-    if not extra then
-        return
+    -- check if the given player can call that command
+    local username = extra.caller.name
+    if not can_execute_command(command, username) then
+        error(`player [{username}] can not execute command [{command.name}]`)
     end
 
     -- execute command
-    local success, result = pcall(command_info.callback, command_args, extra)
-    if not success then
-        chat.send_announcement(`ERROR: {result}`)
-        warn(`error on command-bot command [{command_info.name}]: {result}`)
+    return command.callback(command_args, extra)
+end
+
+function run(...: any)
+    local input = table.concat({...}, " ") -- automatically calls tostring on values
+    local extra = construct_command_call_info(function_caller, "dlcomp_command_bot.run", input)
+
+    local result = attempt_execute_as(input, extra)
+    print( tostring(result) )
+end
+
+-- listen for messages in chat
+chat.player_chatted:Connect(function(sender, channel, raw_message)
+    -- check for and remove prefix
+    local has_prefix, content = shared.dlcomp_string.cut_prefix(raw_message, prefix)
+    if not has_prefix then
         return
     end
-    if result ~= nil then
+
+    -- extra info
+    local success_extra, extra = pcall(construct_command_call_info, sender, channel, raw_message)
+    if not success_extra then
+        chat.send_announcement(`constructing extra: {extra}`)
+        return
+    end
+
+    -- attempt to find and call command
+    local success_execute, result = pcall(attempt_execute_as, content, extra)
+    if not success_execute then
+        chat.send_announcement(`ERR: {result}`)
+    elseif result then
         chat.send_announcement(result)
     end
 end)
@@ -161,9 +185,8 @@ add_command("admin", "toggles a player's ability to run commands, format: ;admin
 
     -- no args given, print the name of every admin
     if not string.match(args, "%S+") then
-        local admin_list_string = table.concat(admin_list, "; ")
-        print(admin_list_string)
-        return admin_list_string
+        print( table.concat(admin_list, "; ") )
+        return "printed admin list to server console"
     end
 
     if not want_player then
@@ -183,6 +206,7 @@ shared.dlcomp_command_bot = {
     add_command = add_command,
     toggle_admin = toggle_admin,
     toggle_command_permissions = toggle_command_permissions,
+    run = run,
     admin_list = admin_list,
 }
 

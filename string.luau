@@ -47,7 +47,19 @@ function partial_match_sections(haystack: {string}, needle: string, seperator: s
     return output
 end
 
+-- does nothing if the prefix doesnt exist in the text
+-- returns (found, remaining)
+function cut_prefix(text: string, prefix: string): (boolean, string)
+    -- check for prefix
+    if text:sub(1, prefix:len()) ~= prefix then
+        return false, text
+    end
+    -- remove the prefix
+    return true, text:sub(prefix:len()+1)
+end
+
 shared.dlcomp_string = {
     trim_start = trim_start,
 	partial_match_sections = partial_match_sections,
+    cut_prefix = cut_prefix,
 }

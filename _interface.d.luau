@@ -43,7 +43,8 @@ declare shared: {
 		add_command: (name: string, explanation: string, callback: (args: string, extra: command_call_info) -> string?) -> (),
 		toggle_admin: (player_name: string, toggle: boolean?) -> (boolean, string),
 		toggle_command_permissions: (toggle: boolean?) -> (),
-		admin_list: {string}
+		run: (...any) -> (),
+		admin_list: {string},
 	},
 	dlcomp_parser: {
 		get_string: (args: string) -> (string, command_parse_info),
@@ -68,6 +69,7 @@ declare shared: {
 	dlcomp_string: {
 		trim_start: (str: string) -> string,
 		partial_match_sections: (haystack: {string}, needle: string, seperator: string) -> {string},
+		cut_prefix: (text: string, prefix: string) -> (boolean, string),
 	},
 	dlcomp_countdown: {
 		countdown: (duration: number) -> nil,
