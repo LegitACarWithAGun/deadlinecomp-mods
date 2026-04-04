@@ -64,8 +64,9 @@ function scramble<T>(arr: {T}): {T}
     return output
 end
 
+-- table.find that just returns a bool
 function contains<T>(tbl: {T}, value: T): boolean
-    return table.find(tbl, value) ~= -1
+    return table.find(tbl, value) ~= nil
 end
 function partial_match(haystack: {string}, needle: string): {string}
     local matches = {}
