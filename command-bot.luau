@@ -133,8 +133,9 @@ function attempt_execute_as(input: string, extra: command_call_info): string?
 end
 
 function run(...: any)
+    local caller = function_caller -- function_caller seemingly gets set to nil if any other function gets called, including table.concat
     local input = table.concat({...}, " ") -- automatically calls tostring on values
-    local extra = construct_command_call_info(function_caller, "dlcomp_command_bot.run", input)
+    local extra = construct_command_call_info(caller, "dlcomp_command_bot.run", input)
 
     local result = attempt_execute_as(input, extra)
     print( tostring(result) )
