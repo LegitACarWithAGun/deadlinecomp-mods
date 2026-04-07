@@ -18,12 +18,12 @@ geneva.set_banned_weapons({
 	"PSRL",
 	"M67",
 	-- "F1",
+	-- "M84",
+	-- "Zarya3",
 
-	-- temp bans
+	-- smokes, currently really easy to circumvent by just viewing through the console
 	"M8HC",
 	"RGD2",
-	"M84",
-	"Zarya3",
 
 	-- unaccessible in UI
 	"Molotov",
@@ -32,7 +32,7 @@ geneva.set_banned_weapons({
 	"PlacingTool",
 	"StarterCharacter", -- ?
 })
-geneva.set_max_grenades(1)
+geneva.set_max_grenades(2)
 
 local KF416_problem_stocks = {
 	"ar_tr2_stock",
@@ -64,12 +64,40 @@ geneva.set_custom_rules({
 				end
 
 				if stocks_found >= 2 then
-					player.set_weapon(slot_name, "nothing")
-					context.feedback[slot_name] = "KF416 stock stacking"
+					shared.dlcomp_geneva.clear_slot(player, context, slot_name, "KF416 stock stacking")
 				end
 			end
 		end
-	}
+	},
+	{
+		name = "Throwable groups (1 F1 or 2 flashes)",
+		callback = function(player: player, context: geneva_context)
+			-- gather slots where grenades are equipped
+			local lethal_slots = shared.dlcomp_geneva.collect_slots_containing(player, "F1")
+			local flash_slots = shared.dlcomp_geneva.collect_slots_containing(player, "M84", "Zarya3")
+
+			-- handle lethals
+			-- limit to 1 lethal
+			for i=2, #lethal_slots do
+				shared.dlcomp_geneva.clear_slot(player, context, lethal_slots[i], "more than 1 lethal")
+			end
+
+			-- handle flashes
+			for i, slot in flash_slots do
+				-- remove all flashes if the player has any lethals equipped
+				if #lethal_slots > 0 then
+					shared.dlcomp_geneva.clear_slot(player, context, slot, "lethal equipped")
+					continue
+				end
+
+				-- only allow up to 2 flashes
+				if i > 2 then
+					shared.dlcomp_geneva.clear_slot(player, context, slot, "more than 2 flashes")
+				end
+			end
+
+		end
+	},
 })
 
 -- behavior
