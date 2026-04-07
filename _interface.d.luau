@@ -96,7 +96,10 @@ declare shared: {
 		print_known_weapons: () -> nil,
 		announce_ruleset: () -> nil,
 		--- helper functions
+		clear_slot: (player: player, context: geneva_context, slot: string, reason: string) -> (),
+		get_weapon_name: (data: gun_data|throwable_data) -> string,
 		iter_slots: (player: player) -> () -> (string, weapon_data),
+		collect_slots_containing: (player: player, ...flattable_strings) -> {string}
 	},
 	dlcomp_round: {
 		prepare_round: (map_name: string, mode_name: string, round_duration: number, countdown_duration: number) -> nil,

@@ -103,6 +103,21 @@ do -- human-facing command-line stuff
 end
 
 do -- helper functions
+    function clear_slot(player: player, context: geneva_context, slot: string, reason: string): ()
+        context.feedback[slot] = reason
+        player.set_weapon(slot, "nothing")
+    end
+
+    function get_weapon_name(data: gun_data|throwable_data): string
+        if data.type == "throwable" then
+            return data.name
+        elseif data.type == "weapon" then
+            return data.client_data.name
+        else
+            error(`unknown weapon type: {data.type}`)
+        end
+    end
+
     --- iterate over every filled slot in the player's inventory, returning slot_name and weapon_data
     function iter_slots(player: player)
         local slot_index = 1
@@ -121,6 +136,21 @@ do -- helper functions
             
             return nil
         end
+    end
+
+    function collect_slots_containing(player: player, ...: flattable_strings): {string}
+        local output = {}
+        local search_for = shared.dlcomp_table.flat_strings(...)
+
+        for slot, weapon in iter_slots(player) do
+            local name = get_weapon_name(weapon)
+            if not table.find(search_for, name) then
+                continue
+            end
+
+            table.insert(output, slot)
+        end
+        return output
     end
 end
 
@@ -153,23 +183,18 @@ do -- implementation
         if not equipment then
             return
         end
-
-        -- get name of equipped weapon
-        -- theyre stored differently between guns and utility
-        local equipment_name = equipment.name or equipment.client_data and equipment.client_data.name
+        local equipment_name = get_weapon_name(equipment)
 
         -- check if weapon is banned
         if table.find(slot_bans, equipment_name) then
-            context.feedback[slot_name] = `{equipment_name} is banned`
-            player.set_weapon(slot_name, "nothing")
+            clear_slot(player, context, slot_name, `{equipment_name} is banned`)
             return
         end
 
         -- allowed to only carry a limited amount of this type of weapon
         if table.find(limited_utility, equipment_name) then
             if context.allowed_nades_left <= 0 then
-                context.feedback[slot_name] = `max {max_equippable_grenades} grenades`
-                player.set_weapon(slot_name, "nothing")
+                clear_slot(player, context, slot_name, `max {max_equippable_grenades} grenades`)
                 return
             end
             context.allowed_nades_left -= 1
@@ -239,5 +264,8 @@ shared.dlcomp_geneva = {
     print_known_weapons = print_known_weapons,
     announce_ruleset = announce_ruleset,
     -- helper functions
+    clear_slot = clear_slot,
+    get_weapon_name = get_weapon_name,
     iter_slots = iter_slots,
+    collect_slots_containing = collect_slots_containing,
 }
