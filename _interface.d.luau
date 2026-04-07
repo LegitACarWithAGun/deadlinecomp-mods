@@ -37,6 +37,10 @@ export type setup_node = {
     parent: setup_node?
 }
 
+--- strings input by the client, should support infinite depth
+--- should be passed to `shared.dlcomp_table.flat_strings`
+export type flattable_strings = string | {string}
+
 declare shared: {
 	[string]: any,
 	dlcomp_command_bot: {
@@ -65,6 +69,7 @@ declare shared: {
 		remove_value: <T>(tbl: {T}, value: T) -> (),
 		append_unique: <T>(tbl: {T}, value: T) -> (),
 		transform_values: <T, N>(tbl: {T}, callback: (value: T) -> N) -> {N},
+		flat_strings: (...flattable_strings) -> {string},
 	},
 	dlcomp_string: {
 		trim_start: (str: string) -> string,

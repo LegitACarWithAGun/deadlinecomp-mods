@@ -124,6 +124,23 @@ function transform_values<T, N>(tbl: {T}, callback: (value: T) -> N): {N}
     return result
 end
 
+function flat_strings(...: flattable_strings): {string}
+    local result = {}
+
+    for _, v in {...} do
+        if type(v) ~= "table" then
+            table.insert(result, v)
+            continue
+        end
+
+        for _, descendant in flat_strings( table.unpack(v) ) do
+            table.insert(result, descendant)
+        end
+    end
+
+    return result
+end
+
 shared.dlcomp_table = {
 	get_page = get_page,
     filter = filter,
@@ -135,4 +152,5 @@ shared.dlcomp_table = {
     remove_value = remove_value,
     append_unique = append_unique,
     transform_values = transform_values,
+    flat_strings = flat_strings,
 }
