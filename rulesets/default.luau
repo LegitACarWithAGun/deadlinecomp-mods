@@ -50,7 +50,7 @@ geneva.set_custom_rules({
 				end
 
 				local client_data = weapon.client_data
-				if client_data.name ~= "KF416" then
+				if client_data.name ~= "KF416" and client_data.name ~= "MK9" then
 					continue
 				end
 
