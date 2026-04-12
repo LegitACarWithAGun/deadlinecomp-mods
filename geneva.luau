@@ -29,6 +29,7 @@ local announce_equipment_cleaning = true -- announces in chat what equipment was
 
 -- constants
 local slot_order = {"primary", "secondary", "throwable1", "throwable2"}
+local known_weapon_types = {"weapon", "throwable", "healing"}
 
 do -- human-facing command-line stuff
 
@@ -75,7 +76,7 @@ do -- human-facing command-line stuff
 
     -- info:
     function print_known_weapons()
-        for _, weapon_name in pairs(config.weapon_names) do
+        for _, weapon_name in config.weapon_names do
             print(weapon_name)
         end
     end
@@ -95,7 +96,7 @@ do -- human-facing command-line stuff
         chat.send_announcement(`- max equippable grenades: {max_equippable_grenades}`)
 
         local custom_rule_names = {}
-        for _, rule in pairs(custom_rules) do
+        for _, rule in custom_rules do
             table.insert(custom_rule_names, rule.name)
         end
         chat.send_announcement(`- custom rules: { format_list(custom_rule_names) }`)
@@ -108,13 +109,33 @@ do -- helper functions
         player.set_weapon(slot, "nothing")
     end
 
-    function get_weapon_name(data: gun_data|throwable_data): string
-        if data.type == "throwable" then
-            return data.name
-        elseif data.type == "weapon" then
-            return data.client_data.name
+    function get_weapon_type(weapon: weapon_data): string
+        return weapon.type
+    end
+    -- returns true if weapon type is unknown
+    function remove_if_unknown_weapon_type(player: player, context: geneva_context, slot: string, weapon: weapon_data): boolean
+        local success, weapon_type = pcall(get_weapon_type, weapon)
+        if not success then
+            clear_slot(player, context, slot, `failed to get weapon type: {weapon_type}`)
+            return
+        end
+
+        if table.find(known_weapon_types, weapon_type) then
+            return false
+        end
+
+        warn("unknown weapon type:", weapon_type)
+        clear_slot(player, context, slot, `unknown weapon type {weapon_type}`)
+        return true
+    end
+    function get_weapon_name(weapon: weapon_data): string
+        local weapon_type = get_weapon_type(weapon)
+        if weapon_type == "weapon" then
+            return weapon.client_data.name
+        elseif weapon_type == "throwable" or "healing" then
+            return weapon.name
         else
-            error(`unknown weapon type: {data.type}`)
+            error(`unknown weapon type: {weapon_type}`)
         end
     end
 
@@ -163,7 +184,7 @@ do -- implementation
         local formatted_list = {}
 
         -- convert the map into an array
-        for _, slot_name in pairs(slot_order) do
+        for _, slot_name in slot_order do
             local warning = feedback[slot_name]
             if not warning then
                 continue
@@ -183,16 +204,20 @@ do -- implementation
         if not equipment then
             return
         end
-        local equipment_name = get_weapon_name(equipment)
+
+        if remove_if_unknown_weapon_type(player, context, slot_name, equipment) then
+            return
+        end
+        local weapon_name = get_weapon_name(equipment)
 
         -- check if weapon is banned
-        if table.find(slot_bans, equipment_name) then
-            clear_slot(player, context, slot_name, `{equipment_name} is banned`)
+        if table.find(slot_bans, weapon_name) then
+            clear_slot(player, context, slot_name, `{weapon_name} is banned`)
             return
         end
 
         -- allowed to only carry a limited amount of this type of weapon
-        if table.find(limited_utility, equipment_name) then
+        if table.find(limited_utility, weapon_name) then
             if context.allowed_nades_left <= 0 then
                 clear_slot(player, context, slot_name, `max {max_equippable_grenades} grenades`)
                 return
@@ -214,7 +239,7 @@ do -- implementation
         }
 
         -- check slots
-        for _, slot_name in pairs(slot_order) do
+        for _, slot_name in slot_order do
             handle_slot(
                 player, slot_name,
                 banned_weapon_list,
@@ -223,7 +248,7 @@ do -- implementation
         end
 
         -- apply custom rules
-        for _, rule in pairs(custom_rules) do
+        for _, rule in custom_rules do
             rule.callback(player, context)
         end
 
@@ -265,6 +290,7 @@ shared.dlcomp_geneva = {
     announce_ruleset = announce_ruleset,
     -- helper functions
     clear_slot = clear_slot,
+    get_weapon_type = get_weapon_type,
     get_weapon_name = get_weapon_name,
     iter_slots = iter_slots,
     collect_slots_containing = collect_slots_containing,

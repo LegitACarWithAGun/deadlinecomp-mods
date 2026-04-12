@@ -97,7 +97,8 @@ declare shared: {
 		announce_ruleset: () -> nil,
 		--- helper functions
 		clear_slot: (player: player, context: geneva_context, slot: string, reason: string) -> (),
-		get_weapon_name: (data: gun_data|throwable_data) -> string,
+		get_weapon_type: (weapon: weapon_data) -> string,
+		get_weapon_name: (weapon: weapon_data) -> string,
 		iter_slots: (player: player) -> () -> (string, weapon_data),
 		collect_slots_containing: (player: player, ...flattable_strings) -> {string}
 	},
