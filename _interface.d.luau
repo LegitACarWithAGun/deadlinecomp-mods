@@ -73,8 +73,11 @@ declare shared: {
 	},
 	dlcomp_string: {
 		trim_start: (str: string) -> string,
+		trim_end: (str: string) -> string,
+		trim: (str: string) -> string,
 		partial_match_sections: (haystack: {string}, needle: string, seperator: string) -> {string},
 		cut_prefix: (text: string, prefix: string) -> (boolean, string),
+		print_array_tall: <T>(header: string?, array: {T}) -> (),
 	},
 	dlcomp_countdown: {
 		countdown: (duration: number) -> nil,

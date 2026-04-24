@@ -5,6 +5,14 @@ function trim_start(str: string): string
     local output, _ = string.gsub(str, "^%s+", "", 1)
     return output
 end
+function trim_end(str: string): string
+    local output, _ = string.gsub(str, "s+$", "", 1)
+    return output
+end
+function trim(str: string): string
+    str = trim_start(str)
+    return trim_end(str)
+end
 
 -- takes a list of strings and a string to match against
 -- returns all the strings in the list After the first match
@@ -61,8 +69,30 @@ function cut_prefix(text: string, prefix: string): (boolean, string)
     return true, text:sub(prefix:len()+1)
 end
 
+function print_array_tall<T>(header: string?, array: {T}): ()
+    if header then
+        header = trim_end(header)
+        info(header .. ":")
+    end
+
+    -- empty array
+    if (not array or #array == 0) then
+        print("==empty==")
+        print()
+        return
+    end
+
+    for _, v in ipairs(array) do
+        print(tostring(v))
+    end
+    print() -- leave a empty line after contents
+end
+
 shared.dlcomp_string = {
     trim_start = trim_start,
+    trim_end = trim_end,
+    trim = trim,
 	partial_match_sections = partial_match_sections,
     cut_prefix = cut_prefix,
+    print_array_tall = print_array_tall,
 }
