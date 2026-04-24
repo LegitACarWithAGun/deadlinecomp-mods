@@ -70,6 +70,9 @@ declare shared: {
 		append_unique: <T>(tbl: {T}, value: T) -> (),
 		transform_values: <T, N>(tbl: {T}, callback: (value: T) -> N) -> {N},
 		flat_strings: (...flattable_strings) -> {string},
+		is_empty: (tbl: any) -> boolean,
+		get_size: (dict: {[any]: any}) -> number,
+		get_usernames_of_players: ({player}) -> {string},
 	},
 	dlcomp_string: {
 		trim_start: (str: string) -> string,

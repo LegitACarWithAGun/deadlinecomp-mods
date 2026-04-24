@@ -141,6 +141,26 @@ function flat_strings(...: flattable_strings): {string}
     return result
 end
 
+function is_empty(tbl: any): boolean
+    return next(tbl) == nil
+end
+
+function get_size(dict: {[any]: any}): number
+    local size = 0
+    for _ in dict do
+        size += 1
+    end
+    return size
+end
+
+function get_usernames_of_players(players: {player}): {string}
+    local usernames = {}
+    for i, player in players do
+        usernames[i] = player.name
+    end
+    return usernames
+end
+
 shared.dlcomp_table = {
 	get_page = get_page,
     filter = filter,
@@ -153,4 +173,7 @@ shared.dlcomp_table = {
     append_unique = append_unique,
     transform_values = transform_values,
     flat_strings = flat_strings,
+    is_empty = is_empty,
+    get_size = get_size,
+    get_usernames_of_players = get_usernames_of_players,
 }
