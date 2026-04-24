@@ -54,9 +54,18 @@ declare shared: {
 		get_string: (args: string) -> (string, command_parse_info),
 		get_number: (args: string, default: number?, min: number?, max: number?) -> (number?, command_parse_info),
 		get_bool: (args: string) -> (boolean?, command_parse_info),
-		get_player: (args: string, match_exact: boolean?) -> (player?, command_parse_info),
+		get_player: (args: string) -> (player?, command_parse_info, {player}),
 		get_team: (args: string) -> (team_id?, command_parse_info),
-		remaining_strings: (args: string) -> {string}
+		
+		remaining_strings: (args: string) -> {string},
+		--- 2nd return value is the args we couldnt find a corresponding player for
+		remaining_players: (args: string) -> ({player}, {[string]: {player}}),
+
+		assert_get_player: (player: player?, parsed: command_parse_info, found: {player}) -> (player, command_parse_info),
+		assert_remaining_players: (found: {player}, unknown: {[string]: {player}}, default: {player}?) -> {player},
+
+		get_player_throwing: (args: string) -> (player, command_parse_info),
+		remaining_players_throwing: (args: string, default: {player}?) -> {player},
 	},
 	dlcomp_table: {
 		get_page: <T>(arr: {T}, page_length: number, want_page: number) -> ({T}, number),
