@@ -17,7 +17,7 @@ end
 
 local ROUND_COMMAND_FORMAT = ";round map_name game_mode [round_duration] [countdown_duration]"
 
-local last_countdown_duration = 15
+local last_countdown_duration = 30
 local want_gamemode: string?
 
 local gamemode_aliases = {
