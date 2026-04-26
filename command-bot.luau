@@ -180,19 +180,17 @@ add_command("help", "prints this message", function(args: string)
 end)
 
 add_command("admin", "toggles a player's ability to run commands, format: ;admin player_name [toggle]", function(args: string)
-    local info, want_player, toggle
-    want_player, info = shared.dlcomp_parser.get_player(args)
-    toggle, info = shared.dlcomp_parser.get_bool(info.remaining_text)
+    local want_player, parsed, found_players = shared.dlcomp_parser.get_player(args)
+    local toggle, _ = shared.dlcomp_parser.get_bool(parsed.remaining_text)
 
     -- no args given, print the name of every admin
     if not string.match(args, "%S+") then
-        print( table.concat(admin_list, "; ") )
+        shared.dlcomp_string.print_array_tall("dlcomp_command_bot admins", admin_list)
         return "printed admin list to server console"
     end
 
-    if not want_player then
-        return "unclear target player"
-    end
+    -- error if we didnt find exactly 1 player
+    want_player, _ = shared.dlcomp_parser.assert_get_player(want_player, parsed, found_players)
 
     local success, message = toggle_admin(want_player.name, toggle)
     return `{success and "SUCCESS" or "FAIL"}: {message}`

@@ -10,21 +10,13 @@ if not shared.dlcomp_parser then
 end
 
 shared.dlcomp_command_bot.add_command("cam", "changes the player's cam mode. format: ;cam mode [player]", function(args: string, extra: command_call_info)
-	local want_mode, player, info
-	want_mode, info = shared.dlcomp_parser.get_string(args)
-	player, info = shared.dlcomp_parser.get_player(info.remaining_text)
+	local want_mode, parsed = shared.dlcomp_parser.get_string(args)
+	local player_list = shared.dlcomp_parser.remaining_players_throwing(parsed.remaining_text, {extra.caller})
 
-	-- user didnt specify a player to apply it to, presume they mean themselves
-	if info.converted_from == "" then
-		player = extra.caller
+	for _, player in player_list do
+		player.set_camera_mode(want_mode)
 	end
-	
-	if player == nil then
-		return "unclear target player"
-	end
-
-	player.set_camera_mode(want_mode)
-	return `set [{player.name}]'s camera mode to [{want_mode}]`
+	return `set camera mode for {#player_list} players to {want_mode}`
 end)
 
 shared.dlcomp_command_bot.add_command("rand", "selects a random value from the argument list", function(args: string, extra: command_call_info)

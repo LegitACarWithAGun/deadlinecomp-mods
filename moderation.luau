@@ -11,59 +11,59 @@ end
 
 local banned_players: {string} = {}
 
-shared.dlcomp_command_bot.add_command("ban", "bans a player from the server", function(args: string)
-	local player, _ = shared.dlcomp_parser.get_player(args)
-	if not player then
-		return "unclear target player"
+shared.dlcomp_command_bot.add_command("ban", "ban a list players from the server. use ;unban to revert", function(args: string)
+	local found, unknown = shared.dlcomp_parser.remaining_players(args)
+
+	for _, player in found do
+		table.insert(banned_players, player.name)
+		player.kick()
 	end
 
-	table.insert(banned_players, player.name)
-	player.kick()
-	return `banned {player.name}`
+	chat.send_announcement(`banned {#found} players`)
+	shared.dlcomp_parser.assert_remaining_players(found, unknown)
+	return nil
 end)
 
-shared.dlcomp_command_bot.add_command("unban", "unbans a player from the server", function(args: string)
-	local username_input, _ = shared.dlcomp_parser.get_string(args)
-
-	local match_list = shared.dlcomp_table.partial_match(banned_players, username_input)
-	if #match_list ~= 1 then
-		return `unclear target player [{username_input}]`
+shared.dlcomp_command_bot.add_command("unban", "unbans a list of players from the server", function(args: string)
+	local usernames = shared.dlcomp_parser.remaining_strings(args)
+	
+	local unbanned = {}
+	local unknown = 0
+	for _, username in usernames do
+		local match_list = shared.dlcomp_table.partial_match(banned_players, username)
+		if #match_list == 1 then
+			shared.dlcomp_table.remove_value(banned_players, match_list[1])
+			table.insert(unbanned, match_list[1])
+		else
+			warn(`found {#match_list} banned players that match arg {username}`)
+			unknown += 1
+		end
 	end
-	local selected = match_list[1]
 
-	shared.dlcomp_table.remove_value(banned_players, selected)
-	return `unbanned [{selected}]`
+	shared.dlcomp_string.print_array_tall("unbanned players", unbanned)
+	return `unbanned {#unbanned} players; {unknown} bad args; see console`
 end)
 
-shared.dlcomp_command_bot.add_command("kick", "kicks a person from the server", function(args: string)
-	local player, info = shared.dlcomp_parser.get_player(args)
-	if not player then
-		return `unclear target player [{info.converted_from}]`
+shared.dlcomp_command_bot.add_command("kick", "kick a list of people from the server", function(args: string)
+	local found, unknown = shared.dlcomp_parser.remaining_players(args)
+
+	for _, player in found do
+		player.kick()
 	end
-	player.kick()
-	return `kicked {player.name}`
+
+	chat.send_announcement(`kicked {#found} players`)
+	shared.dlcomp_parser.assert_remaining_players(found, unknown)
+	return nil
 end)
 
 shared.dlcomp_command_bot.add_command("kick_except", "kicks everyone except admins and a list of players ", function(args: string)
+	local found, unknown = shared.dlcomp_parser.remaining_players(args)
+
 	-- dont allow admins to get kicked
 	local exception_list = table.clone(shared.dlcomp_command_bot.admin_list)
-
-	-- collect user-specified exceptions
-	while true do
-		local player, info = shared.dlcomp_parser.get_player(args)
-
-		if info.converted_from == "" then
-			-- no more inputs
-			break
-		end
-		if player == nil then
-			-- dont know who theyre reffering to
-			chat.send_announcement(`unclear player: [{info.converted_from}]`)
-			continue
-		end
-
+	-- prevent user specified players from getting kicked
+	for _, player in found do
 		table.insert(exception_list, player.name)
-		args = info.remaining_text
 	end
 
 	-- get all players not in the exception list
@@ -72,37 +72,40 @@ shared.dlcomp_command_bot.add_command("kick_except", "kicks everyone except admi
 	end)
 
 	-- kick them
-	info("kicking players:")
+	info("kick_except kicked:")
 	for _, player in to_kick do
 		player.kick()
-		print(`- {player.name}`)
+		print(player.name)
 	end
+	print()
 
-	return `kicked {#to_kick} players`
+	chat.send_announcement(`kicked {#to_kick} players`)
+	shared.dlcomp_parser.assert_remaining_players(found, unknown)
+	return nil
 end)
 
-shared.dlcomp_command_bot.add_command("respawn", "respawns a player if theyre alive", function(args: string)
-	local player, _ = shared.dlcomp_parser.get_player(args)
-	if not player then
-		return "unclear target player"
-	end
-
-	if player.is_alive() then
+shared.dlcomp_command_bot.add_command("respawn", "spawns/respawns a list of players", function(args: string)
+	local found, unknown = shared.dlcomp_parser.remaining_players(args)
+	
+	for _, player in found do
 		player.respawn()
-		return `respawned [{player.name}]`
-	else
-		return `[{player.name}] isnt spawned`
 	end
+
+	chat.send_announcement(`respawned {#found} players`)
+	shared.dlcomp_parser.assert_remaining_players(found, unknown)
+	return nil
 end)
 
-shared.dlcomp_command_bot.add_command("kill", "kills a specific player", function(args: string)
-	local player, _ = shared.dlcomp_parser.get_player(args)
-	if not player then
-		return "unclear target player"
+shared.dlcomp_command_bot.add_command("kill", "kills a list of players", function(args: string)
+	local found, unknown = shared.dlcomp_parser.remaining_players(args)
+	
+	for _, player in found do
+		player.kill()
 	end
 
-	player.kill()
-	return `killed [{player.name}]`
+	chat.send_announcement(`killed {#found} players`)
+	shared.dlcomp_parser.assert_remaining_players(found, unknown)
+	return nil
 end)
 
 -- kick any banned players that try to rejoin
