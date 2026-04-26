@@ -6,7 +6,7 @@ function trim_start(str: string): string
     return output
 end
 function trim_end(str: string): string
-    local output, _ = string.gsub(str, "s+$", "", 1)
+    local output, _ = string.gsub(str, "%s+$", "", 1)
     return output
 end
 function trim(str: string): string
