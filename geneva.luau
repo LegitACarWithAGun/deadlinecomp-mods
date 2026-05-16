@@ -20,7 +20,7 @@ end
 -- rules
 local banned_weapon_list: {string} = {}
 local max_equippable_grenades: number = 2
-local limited_utility: {string} = {"F1", "M67"} -- these count towards max_equippable_grenades
+local limited_utility: {string} = {"F1", "M67", "M84", "Zarya3", "M8HC", "RGD2", "Molotov"} -- these count towards max_equippable_grenades
 local custom_rules: {custom_geneva_rule} = {}
 
 -- behaviour
