@@ -194,7 +194,7 @@ function get_player_throwing(args: string): (player, command_parse_info)
 end
 function remaining_players_throwing(args: string, default: {player}?): {player}
     local found, unknown = remaining_players(args)
-    return assert_remaining_players(found, unknown)
+    return assert_remaining_players(found, unknown, default)
 end
 
 
