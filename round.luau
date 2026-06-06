@@ -14,6 +14,9 @@ end
 if not shared.dlcomp_table then
     require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/table.luau")
 end
+if not shared.dlcomp_string then
+    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/string.luau")
+end
 
 local ROUND_COMMAND_FORMAT = ";round map_name game_mode [round_duration] [countdown_duration]"
 
@@ -81,6 +84,40 @@ function filter_low_priority<T>(to_filter: {T}, filter: {T})
     end
 end
 
+type err = string?
+function autocomplete_map(input: string): (string, err)
+    local all_maps = map.get_maps()
+    local possible_maps = shared.dlcomp_string.partial_match_sections(all_maps, input, "_")
+    possible_maps = filter_low_priority(possible_maps, low_priority_maps)
+
+    local output = ""
+    if #possible_maps == 0 then
+        shared.dlcomp_string.print_array_tall("all maps", all_maps)
+        return output, `no map matches input [{input}]; see console for the map list`
+    elseif #possible_maps > 1 then
+        shared.dlcomp_string.print_array_tall(`maps matching input [{input}]`, possible_maps)
+        return output, `multiple maps match input [{input}]; see console`
+    else
+        return possible_maps[1], nil
+    end
+end
+
+function autocomplete_gamemode(input: string): (string, err)
+    local input_unmodified = input
+    input = string.lower(input)
+
+    -- custom short names for gamemodes, because partial-matching just wont work for the mess that team_deathmatch is
+    input = gamemode_aliases[input] or input
+
+    -- does the gamemode exist?
+    if not gamemode.available_gamemodes[input] then
+        local gamemode_list = shared.dlcomp_table.get_keys(gamemode.available_gamemodes)
+        shared.dlcomp_string.print_array_tall("available gamemodes", gamemode_list)
+        return input, `no gamemode found for input [{input_unmodified}]; see console`
+    end
+    return input, nil
+end
+
 -- chat command
 shared.dlcomp_command_bot.add_command("round", `starts a round with a countdown. format: {ROUND_COMMAND_FORMAT}`, function(args)
     local map_name, game_mode, round_duration, countdown_duration, info
@@ -90,45 +127,50 @@ shared.dlcomp_command_bot.add_command("round", `starts a round with a countdown.
     countdown_duration, info = shared.dlcomp_parser.get_number(info.remaining_text, last_countdown_duration, 5)
 
     -- handle arguments
-    do
-        -- are all the required arguments given?
-        if map_name == "" or game_mode == "" then
-            return `missing required arguments, command format: {ROUND_COMMAND_FORMAT}`
-        end
+    -- are all the required arguments given?
+    if map_name == "" or game_mode == "" then
+        return `missing required arguments, command format: {ROUND_COMMAND_FORMAT}`
+    end
+    local err
 
-        -- find the map the player's searching for
-        local all_maps = map.get_maps()
-        local possible_maps = shared.dlcomp_string.partial_match_sections(all_maps, map_name, "_")
-        possible_maps = filter_low_priority(possible_maps, low_priority_maps)
+    -- get map
+    map_name, err = autocomplete_map(map_name)
+    if err then
+        return err
+    end
 
-        if table.find(all_maps, map_name) then
-            -- theres an exact match, just use that
-        elseif #possible_maps == 0 then
-            return `list of all maps: {table.concat(all_maps, ", ")}`
-        elseif #possible_maps > 1 then
-            return `multiple maps match the argument: {table.concat(possible_maps, ", ")}`
-        else
-            map_name = possible_maps[1]
-        end
-
-        -- custom short names for gamemodes, because partial-matching just wont work for the mess that team_deathmatch is
-        game_mode = string.lower(game_mode)
-        if gamemode_aliases[game_mode] then
-            game_mode = gamemode_aliases[game_mode]
-        end
-
-        -- does the gamemode exist?
-        if not gamemode.available_gamemodes[game_mode] then
-            local gamemode_list = {}
-            for name in pairs(gamemode.available_gamemodes) do
-                table.insert(gamemode_list, name)
-            end
-            return `no gamemode with name [{game_mode}] found, list of gamemodes: {table.concat(gamemode_list, ", ")}`
-        end
+    -- gamemode
+    game_mode, err = autocomplete_gamemode(game_mode)
+    if err then
+        return err
     end
 
     prepare_round(map_name, game_mode, round_duration, countdown_duration)
     return
+end)
+
+shared.dlcomp_command_bot.add_command("map", "loads a map", function(args)
+    local want_map = shared.dlcomp_parser.get_string(args)
+
+    local map_name, err = autocomplete_map(want_map)
+    if err then
+        return err
+    end
+
+    map.set_map(map_name)
+    return `successfully loaded {map_name}`
+end)
+
+shared.dlcomp_command_bot.add_command("gamemode", "starts the gamemode", function(args)
+    local want_gamemode = shared.dlcomp_parser.get_string(args)
+    
+    local mode, err = autocomplete_gamemode(want_gamemode)
+    if err then
+        return err
+    end
+
+    gamemode.force_set_gamemode(mode)
+    return `started gamemode {mode}`
 end)
 
 shared.dlcomp_round = {

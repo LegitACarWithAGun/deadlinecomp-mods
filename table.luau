@@ -115,6 +115,14 @@ function append_unique<T>(tbl: {T}, value: T)
     table.insert(tbl, value)
 end
 
+function get_keys<k>(tbl: {[k]: any}): {k}
+    local keys = {}
+    for key in tbl do
+        table.insert(keys, key)
+    end
+    return keys
+end
+
 -- equivalent to .map in JS
 function transform_values<T, N>(tbl: {T}, callback: (value: T) -> N): {N}
     local result = {}
@@ -171,6 +179,7 @@ shared.dlcomp_table = {
     partial_match = partial_match,
     remove_value = remove_value,
     append_unique = append_unique,
+    get_keys = get_keys,
     transform_values = transform_values,
     flat_strings = flat_strings,
     is_empty = is_empty,

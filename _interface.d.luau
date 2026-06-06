@@ -77,6 +77,7 @@ declare shared: {
 		partial_match: (haystack: {string}, needle: string) -> {string},
 		remove_value: <T>(tbl: {T}, value: T) -> (),
 		append_unique: <T>(tbl: {T}, value: T) -> (),
+		get_keys: <k>(tbl: {[k]: any}) -> {k},
 		transform_values: <T, N>(tbl: {T}, callback: (value: T) -> N) -> {N},
 		flat_strings: (...flattable_strings) -> {string},
 		is_empty: (tbl: any) -> boolean,
