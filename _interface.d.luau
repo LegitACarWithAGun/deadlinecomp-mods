@@ -41,6 +41,9 @@ export type setup_node = {
 --- should be passed to `shared.dlcomp_table.flat_strings`
 export type flattable_strings = string | {string}
 
+-- for golang style erroring
+export type err = string?
+
 declare shared: {
 	[string]: any,
 	dlcomp_command_bot: {

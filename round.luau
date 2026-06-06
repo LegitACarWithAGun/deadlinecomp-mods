@@ -55,7 +55,7 @@ function round_started()
     end
 
     -- we also have to prevent the teams from getting scrambled by the game
-    local team_scrambling_reset_value = sharedvars.gm_team_scrambling
+    local previous_team_scrambling_value = sharedvars.gm_team_scrambling
     sharedvars.gm_team_scrambling = false
 
     -- offically starts the round and timer
@@ -63,15 +63,8 @@ function round_started()
     want_gamemode = nil
 
     -- reset the team scrambling sharedvar to whatever it was before
-    sharedvars.gm_team_scrambling = team_scrambling_reset_value
+    sharedvars.gm_team_scrambling = previous_team_scrambling_value
 end
-
--- countdown ended
-shared.dlcomp_countdown.finished:Connect(function()
-    round_started()
-end)
-
-
 
 function filter_low_priority<T>(to_filter: {T}, filter: {T})
     local without_low_priority = shared.dlcomp_table.not_in_filter(to_filter, filter)
@@ -84,7 +77,6 @@ function filter_low_priority<T>(to_filter: {T}, filter: {T})
     end
 end
 
-type err = string?
 function autocomplete_map(input: string): (string, err)
     local all_maps = map.get_maps()
     local possible_maps = shared.dlcomp_string.partial_match_sections(all_maps, input, "_")
@@ -118,6 +110,9 @@ function autocomplete_gamemode(input: string): (string, err)
     return input, nil
 end
 
+
+
+
 -- chat command
 shared.dlcomp_command_bot.add_command("round", `starts a round with a countdown. format: {ROUND_COMMAND_FORMAT}`, function(args)
     local map_name, game_mode, round_duration, countdown_duration, info
@@ -131,9 +126,9 @@ shared.dlcomp_command_bot.add_command("round", `starts a round with a countdown.
     if map_name == "" or game_mode == "" then
         return `missing required arguments, command format: {ROUND_COMMAND_FORMAT}`
     end
-    local err
 
     -- get map
+    local err
     map_name, err = autocomplete_map(map_name)
     if err then
         return err
@@ -172,6 +167,18 @@ shared.dlcomp_command_bot.add_command("gamemode", "starts the gamemode", functio
     gamemode.force_set_gamemode(mode)
     return `started gamemode {mode}`
 end)
+
+
+
+
+-- signals
+-- countdown ended
+shared.dlcomp_countdown.finished:Connect(function()
+    round_started()
+end)
+
+
+
 
 shared.dlcomp_round = {
     prepare_round = prepare_round,
