@@ -467,9 +467,9 @@ do -- event listeners
 
         -- team's alive-limit has been reached
         local spawn_limit = max_spawned[team]
-        if spawn_limit and get_team_amount_spawned(team) >= spawn_limit then
+        if spawn_limit and get_team_amount_spawned(team) > spawn_limit then
             player.kill()
-            chat.send_announcement(`blocked [{username}]'s spawn, team has >={spawn_limit} players spawned`)
+            chat.send_announcement(`blocked [{username}]'s spawn, team has >{spawn_limit} players spawned`)
             return
         end
 
