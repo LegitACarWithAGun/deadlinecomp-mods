@@ -234,11 +234,14 @@ do -- controls
         if previous_team == team then
             return team
         end
-
+        
         -- remove from previous roster, might get switched back otherwise
+        local in_previous = is_in_roster(username, previous_team)
         remove_from_roster(previous_team, player.name)
+
         -- add to roster if the new team has one
-        if rosters[team] then
+        -- do not add to the new team if the previous team had a roster but they were not in it, this prevents refs from accidentally ending up on a team's roster
+        if rosters[team] and in_previous ~= false then
             add_to_roster(team, player.name)
         else
             player.set_team(team)
