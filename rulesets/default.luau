@@ -79,9 +79,9 @@ geneva.should_announce_equipment_cleaning(true)
 local command_bot = shared.dlcomp_command_bot
 local dlcomp_referees = {
 	-- refs
-	"LegitACarWithAGun", "klapakol", "korbi3105", "xalwaleedx", "ZanderFolf",
+	"LegitACarWithAGun", "klapakol", "korbi3105", "xalwaleedx", "ZanderFolf", "tezukology", "glory_leaves", "wsznmyhero", "areoseka", "Inhale_8632", "killmasterpro", "MeNoCare_1", "eifwehuy", "xalwaleedx",
 	-- mods
-	"headshot_gghd", "bachancuc123", "Inhale_8632", "Ryseran", "swat64834",
+	"headshot_gghd", "bachancuc123", "Inhale_8632", "Ryseran", "swat64834", 
 }
 for _, name in pairs(dlcomp_referees) do
 	command_bot.toggle_admin(name, true)
