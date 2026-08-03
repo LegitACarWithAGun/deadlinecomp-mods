@@ -6,7 +6,7 @@
 
 -- load command bot
 if not shared.dlcomp_command_bot then
-    require("https://raw.githubusercontent.com/legitacarwithagun/deadlinecomp-mods/refs/heads/main/command-bot.luau")
+    require("https://raw.githubusercontent.com/johnbachspec/deadlinecomp-mods/refs/heads/main/command-bot.luau")
 end
 
 -- keep every printed line comfortably under console/chat wrap limits
