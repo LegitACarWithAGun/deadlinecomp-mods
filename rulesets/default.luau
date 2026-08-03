@@ -104,5 +104,5 @@ sharedvars.gm_match_time_minutes = 8 -- round command uses this as a default
 geneva.toggle_rules(true) -- this also announces the ruleset in chat
 
 -- quick reference, prints frequently used comp commands to console
-require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/scripts/command-reference.luau")
+require("https://raw.githubusercontent.com/johnbachspec/deadlinecomp-mods/refs/heads/main/scripts/command_reference.luau")
 shared.dlcomp_command_reference.print_command_reference()
