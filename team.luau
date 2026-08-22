@@ -164,13 +164,19 @@ do -- roster apply
         local cur_roster = is_in_roster(player.name, cur_team)
         local other_roster = is_in_roster(player.name, other_team)
 
+        -- only move admins if you need to
+        local is_admin = table.find(shared.dlcomp_command_bot.admin_list, player.name)
+        if is_admin then
+            if other_roster == true then
+                player.set_team(other_team)
+                respawn_alive(player)
+            end
+            return
+        end
+
         -- despawn if neither team can take the player
         if cur_roster == false and other_roster == false then
             player.kill()
-            return
-        end
-        -- explicitly on current team
-        if cur_roster == true then
             return
         end
 
@@ -456,7 +462,8 @@ do -- event listeners
         end
         
         -- player is admin, notify but always let them spawn
-        if not in_roster and table.find(shared.dlcomp_command_bot.admin_list, username) then
+        local is_admin = table.find(shared.dlcomp_command_bot.admin_list, username)
+        if not in_roster and is_admin then
             chat.send_announcement(`letting admin [{username}] spawn despite roster restrictions`)
             return
         end
