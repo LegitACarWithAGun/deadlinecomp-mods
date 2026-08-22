@@ -47,17 +47,13 @@ geneva.should_announce_equipment_cleaning(true)
 local command_bot = shared.dlcomp_command_bot
 local dlcomp_referees = {
 	-- refs
-	"LegitACarWithAGun", "klapakol", "korbi3105", "xalwaleedx", "ZanderFolf",
-	-- mods
-	"headshot_gghd", "bachancuc123", "Inhale_8632", "Ryseran", "swat64834",
+	"LegitACarWithAGun", "areoseka", "Mango911473", "klapakol", "tezukology",
+	-- trial refs
+	"eifwehuy", "Inhale_8632", "killmasterpro", "korbi3105", "glory_leaves", "MeNoCare_1", "Petrumetru23224", "Thetruesaint432", "wsznmyhero", "xalwaleedx", "ZanderFolf", "Simonupd",
 }
-for _, name in pairs(dlcomp_referees) do
+for _, name in dlcomp_referees do
 	command_bot.toggle_admin(name, true)
 end
-
--- UPSTREAM BUG: the only way to read chat messages always reports them coming from the first person in the player list
--- just let everyone run chat commands until that is fixed
-command_bot.toggle_command_permissions(false)
 
 
 -- qol sharedvars
