@@ -80,16 +80,23 @@ end
 
 function autocomplete_map(input: string): (string, err)
     local all_maps = map.get_maps()
+
+    -- just use the exact map name if it exists
+    -- mainly a backup for if low_priority_maps hasnt been updated
+    local exact_match = table.find(all_maps, input)
+    if exact_match then
+        return input, nil
+    end
+
     local possible_maps = shared.dlcomp_string.partial_match_sections(all_maps, input, "_")
     possible_maps = filter_low_priority(possible_maps, low_priority_maps)
 
-    local output = ""
     if #possible_maps == 0 then
         shared.dlcomp_string.print_array_tall("all maps", all_maps)
-        return output, `no map matches input [{input}]; see console for the map list`
+        return "", `no map matches input [{input}]; see console for the map list`
     elseif #possible_maps > 1 then
         shared.dlcomp_string.print_array_tall(`maps matching input [{input}]`, possible_maps)
-        return output, `multiple maps match input [{input}]; see console`
+        return "", `multiple maps match input [{input}]; see console`
     else
         return possible_maps[1], nil
     end
