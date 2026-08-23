@@ -29,6 +29,7 @@ local gamemode_aliases = {
 }
 local low_priority_maps = {
     "test2_downtown_v2",
+    "test_complex_night",
 }
 
 function prepare_round(map_name: string, mode_name: string, round_duration: number, countdown_duration: number)
