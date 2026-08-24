@@ -4,18 +4,9 @@
 -- - gun = firearms and rpgs, everything thats in slots 1 and 2
 -- - utility = grenades and knives, everything thats in slots 3 and 4, internally called `throwable`
 
--- load command bot
-if not shared.dlcomp_command_bot then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/command-bot.luau")
-end
--- load arg parser module
-if not shared.dlcomp_parser then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/arg-parser.luau")
-end
--- load common functions
-if not shared.dlcomp_table then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/table.luau")
-end
+local command_bot = require("./command-bot")
+local arg_parser = require("../shared/arg-parser")
+local dlcomp_table = require("../shared/table")
 
 -- rules
 local banned_weapon_list: {string} = {}
@@ -31,12 +22,23 @@ local announce_equipment_cleaning = true -- announces in chat what equipment was
 local slot_order = {"primary", "secondary", "throwable1", "throwable2"}
 local known_weapon_types = {"weapon", "throwable", "healing"}
 
+export type geneva_context = {
+    --- warning/info about the loadout, key being the slot name
+    feedback: {[string]: string},
+    --- how many more grenades the player can have
+    allowed_nades_left: number,
+}
+export type custom_geneva_rule = {
+    name: string,
+    callback: (player: player) -> string?
+}
+
 do -- human-facing command-line stuff
 
     -- rules:
     function set_banned_weapons(new_bans: {string})
         -- warn the user if we're not aware of all of the guns
-        local unknown_list = shared.dlcomp_table.not_in_filter(new_bans, config.weapon_names)
+        local unknown_list = dlcomp_table.not_in_filter(new_bans, config.weapon_names)
         if #unknown_list ~= 0 then
             warn(`unknown weapons in ban list: `, table.concat(unknown_list, ", "))
         end
@@ -159,9 +161,9 @@ do -- helper functions
         end
     end
 
-    function collect_slots_containing(player: player, ...: flattable_strings): {string}
+    function collect_slots_containing(player: player, ...: dlcomp_table.flattable_strings): {string}
         local output = {}
-        local search_for = shared.dlcomp_table.flat_strings(...)
+        local search_for = dlcomp_table.flat_strings(...)
 
         for slot, weapon in iter_slots(player) do
             local name = get_weapon_name(weapon)
@@ -262,12 +264,12 @@ end
 
 
 -- chat commands
-shared.dlcomp_command_bot.add_command("geneva_rules", "toggles geneva enforcing equipment rules", function(args: string)
-    local toggle, _ = shared.dlcomp_parser.get_bool(args)
+command_bot.add_command("geneva_rules", "toggles geneva enforcing equipment rules", function(args: string)
+    local toggle, _ = arg_parser.get_bool(args)
     toggle_rules(toggle)
 end)
-shared.dlcomp_command_bot.add_command("geneva_announce", "toggles whether geneva announces why a player's equipment got removed in chat", function(args: string)
-    local toggle, _ = shared.dlcomp_parser.get_bool(args)
+command_bot.add_command("geneva_announce", "toggles whether geneva announces why a player's equipment got removed in chat", function(args: string)
+    local toggle, _ = arg_parser.get_bool(args)
     if toggle == nil then
         toggle = not announce_equipment_cleaning
     end
@@ -276,8 +278,7 @@ shared.dlcomp_command_bot.add_command("geneva_announce", "toggles whether geneva
     return `geneva's equipment enforcement announcements are {toggle and "Enabled" or "Disabled"}`
 end)
 
-
-shared.dlcomp_geneva = {
+return {
     -- rules
     toggle_rules = toggle_rules,
     set_banned_weapons = set_banned_weapons,

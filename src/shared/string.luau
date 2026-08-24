@@ -17,7 +17,7 @@ end
 -- takes a list of strings and a string to match against
 -- returns all the strings in the list After the first match
 -- returns a empty list if it matches the last section, nil if no matches
-function sections_after_match(sections: {string}, needle: string): {string}?
+local function sections_after_match(sections: {string}, needle: string): {string}?
     for i, section in sections do
 		-- section matches the needle, store everything after this
         if string.match(section, needle) then
@@ -88,7 +88,7 @@ function print_array_tall<T>(header: string?, array: {T}): ()
     print() -- leave a empty line after contents
 end
 
-shared.dlcomp_string = {
+return {
     trim_start = trim_start,
     trim_end = trim_end,
     trim = trim,

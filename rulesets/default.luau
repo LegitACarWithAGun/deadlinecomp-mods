@@ -4,12 +4,10 @@
 -- intentionally written in a way where you can run it multiple times safely
 
 -- load all modules
-if not shared.dlcomp_all_loaded then
-	require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/init.luau")
-end
+local _ = require("../src/server/init")
 
 
-local geneva = shared.dlcomp_geneva
+local geneva = require("../src/server/geneva")
 
 -- ruleset
 geneva.set_banned_weapons({
@@ -44,7 +42,7 @@ geneva.should_announce_equipment_cleaning(true)
 
 
 -- give dlcomp staff ability to run commands even if they dont own the server
-local command_bot = shared.dlcomp_command_bot
+local command_bot = require("../src/server/command-bot")
 local dlcomp_referees = {
 	-- refs
 	"LegitACarWithAGun", "areoseka", "Mango911473", "klapakol", "tezukology",

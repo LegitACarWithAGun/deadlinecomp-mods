@@ -1,17 +1,9 @@
 --!strict
 
-if not shared.dlcomp_command_bot then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/command-bot.luau")
-end
-if not shared.dlcomp_parser then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/arg-parser.luau")
-end
-if not shared.dlcomp_table then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/table.luau")
-end
-if not shared.dlcomp_string then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/string.luau")
-end
+local command_bot = require("./command-bot")
+local arg_parser = require("../shared/arg-parser")
+local dlcomp_table = require("../shared/table")
+local dlcomp_string = require("../shared/string")
 
 local rosters: {[team_id]: {string}} = {}
 local max_spawned: {[team_id]: number} = {}
@@ -34,7 +26,7 @@ do -- helpers
         if not roster then
             return nil
         end
-        return shared.dlcomp_table.contains(roster, username)
+        return dlcomp_table.contains(roster, username)
     end
     function is_in_any_roster(username: string): boolean
         return is_in_roster(username, "attacker") or not not is_in_roster(username, "defender")
@@ -42,8 +34,8 @@ do -- helpers
 
     -- errors if we arent aware of the given team id
     function assert_team(team: team_id)
-        if not shared.dlcomp_table.contains(all_team_ids, team) then
-            shared.dlcomp_string.print_array_tall("valid team ids", all_team_ids)
+        if not dlcomp_table.contains(all_team_ids, team) then
+            dlcomp_string.print_array_tall("valid team ids", all_team_ids)
             error(`unknown team id: {team}`)
         end
     end
@@ -69,13 +61,13 @@ do -- helpers
 
             local roster = rosters[team]
             warn("roster:")
-            shared.dlcomp_string.print_array_tall(nil, roster)
+            dlcomp_string.print_array_tall(nil, roster)
         end
 
-        local in_neither_roster = shared.dlcomp_table.filter(players.get_all(), function(player: player): boolean
+        local in_neither_roster = dlcomp_table.filter(players.get_all(), function(player: player): boolean
             return not is_in_any_roster(player.name)
         end)
-        shared.dlcomp_string.print_array_tall("players not in either roster", shared.dlcomp_table.get_usernames_of_players(in_neither_roster))
+        dlcomp_string.print_array_tall("players not in either roster", dlcomp_table.get_usernames_of_players(in_neither_roster))
     end
 end
 
@@ -118,7 +110,7 @@ do -- roster update
 
         -- add to team's roster
         rosters[team] = rosters[team] or {}
-        shared.dlcomp_table.append_unique(rosters[team], username)
+        dlcomp_table.append_unique(rosters[team], username)
     
         -- update the player itself, they may or may not be in the server
         local player = players.get(username)
@@ -165,7 +157,7 @@ do -- roster apply
         local other_roster = is_in_roster(player.name, other_team)
 
         -- only move admins if you need to
-        local is_admin = table.find(shared.dlcomp_command_bot.admin_list, player.name)
+        local is_admin = table.find(command_bot.admin_list, player.name)
         if is_admin then
             if other_roster == true then
                 player.set_team(other_team)
@@ -211,7 +203,7 @@ do -- roster apply
             end
         end
 
-        local count_teams_with_roster = shared.dlcomp_table.get_size(rosters)
+        local count_teams_with_roster = dlcomp_table.get_size(rosters)
         if count_teams_with_roster == 0 then
             disable_rosters()
         else
@@ -274,7 +266,7 @@ do -- controls
         disable_rosters()
 
         -- scramble all players in a random order
-        local scrambled_player_list = shared.dlcomp_table.scramble( players.get_all() )
+        local scrambled_player_list = dlcomp_table.scramble( players.get_all() )
 
         -- loop over the scrambled list, alternating which team you place them in
         local next_team = all_team_ids[math.random(#all_team_ids)]
@@ -287,16 +279,16 @@ do -- controls
         end
     end
 
-    function bulk_add(team: team_id, ...: flattable_strings): ()
+    function bulk_add(team: team_id, ...: dlcomp_table.flattable_strings): ()
         assert_team(team)
 
-        for _, username in shared.dlcomp_table.flat_strings(...) do
+        for _, username in dlcomp_table.flat_strings(...) do
             add_to_roster(team, username)
         end
         apply_roster_rules()
     end
-    function bulk_remove(...: flattable_strings): ()
-        for _, username in shared.dlcomp_table.flat_strings(...) do
+    function bulk_remove(...: dlcomp_table.flattable_strings): ()
+        for _, username in dlcomp_table.flat_strings(...) do
             remove_from_all_rosters(username)
         end
         apply_roster_rules()
@@ -311,15 +303,15 @@ do -- controls
 end
 
 do -- register chat commands
-    shared.dlcomp_command_bot.add_command("switch", "switch the team of the specified player", function(args: string)
-        local team, parsed = shared.dlcomp_parser.get_team(args)
+    command_bot.add_command("switch", "switch the team of the specified player", function(args: string)
+        local team, parsed = arg_parser.get_team(args)
         -- ignore the parse for a team if we didnt find anything
         local remaining_args = parsed.remaining_text
         if team == nil then
             remaining_args = args
         end
 
-        local found, unknown = shared.dlcomp_parser.remaining_players(remaining_args)
+        local found, unknown = arg_parser.remaining_players(remaining_args)
 
         local updated = 0
         for _, player in found do
@@ -331,29 +323,29 @@ do -- register chat commands
         end
 
         chat.send_announcement(`moved {updated} players`)
-        shared.dlcomp_parser.assert_remaining_players(found, unknown)
+        arg_parser.assert_remaining_players(found, unknown)
         return nil
     end)
 
-    shared.dlcomp_command_bot.add_command("team_swap", "swap rosters and the teams of everyone", function(args: string): string?
+    command_bot.add_command("team_swap", "swap rosters and the teams of everyone", function(args: string): string?
         team_swap()
         return "teams and rosters have been swapped"
     end)
 
-    shared.dlcomp_command_bot.add_command("team_scramble", "scramble players into teams randomly", function(args: string)
+    command_bot.add_command("team_scramble", "scramble players into teams randomly", function(args: string)
         team_scramble()
         return "teams have been scrambled; rosters cleared"
     end)
 
-    shared.dlcomp_command_bot.add_command("team_set", "set a roster for a specific team, format is team_set <TEAM> <PLAYER...>", function(args: string, extra: command_call_info): string?
-        local team, parsed = shared.dlcomp_parser.get_team(args)
+    command_bot.add_command("team_set", "set a roster for a specific team, format is team_set <TEAM> <PLAYER...>", function(args: string, extra: command_bot.command_call_info): string?
+        local team, parsed = arg_parser.get_team(args)
         if not team then
             return "unclear team name, try ANTO or SYNO as the first arg"
         end
 
         -- get usernames, I explicitly dont want to check if theyre in the server
         -- since this command is mainly for known rosters that you just paste in
-        local usernames = shared.dlcomp_parser.remaining_strings(parsed.remaining_text)
+        local usernames = arg_parser.remaining_strings(parsed.remaining_text)
         if #usernames == 0 then
             usernames = nil
         else
@@ -367,33 +359,33 @@ do -- register chat commands
         return "success"
     end)
 
-    shared.dlcomp_command_bot.add_command("team_add", "add player to a specific team's roster, format is team_add <TEAM> <PLAYER...>", function(args: string, extra: command_call_info): string?
-        local team, parsed = shared.dlcomp_parser.get_team(args)
+    command_bot.add_command("team_add", "add player to a specific team's roster, format is team_add <TEAM> <PLAYER...>", function(args: string, extra: command_bot.command_call_info): string?
+        local team, parsed = arg_parser.get_team(args)
         if not team then
             return "unclear team name, try ANTO or SYNO as the first arg"
         end
 
         -- get players from args, and get the found player's usernames
-        local player_list = shared.dlcomp_parser.remaining_players_throwing(parsed.remaining_text)
-        local usernames = shared.dlcomp_table.get_usernames_of_players(player_list)
+        local player_list = arg_parser.remaining_players_throwing(parsed.remaining_text)
+        local usernames = dlcomp_table.get_usernames_of_players(player_list)
 
         -- update rosters
         bulk_add(team, usernames)
         return `updated {#usernames} players`
     end)
 
-    shared.dlcomp_command_bot.add_command("team_remove", "remove a player from rosters", function(args: string, extra: command_call_info): string?
+    command_bot.add_command("team_remove", "remove a player from rosters", function(args: string, extra: command_bot.command_call_info): string?
         -- get players from args, and get the found player's usernames
-        local player_list = shared.dlcomp_parser.remaining_players_throwing(args)
-        local usernames = shared.dlcomp_table.get_usernames_of_players(player_list)
+        local player_list = arg_parser.remaining_players_throwing(args)
+        local usernames = dlcomp_table.get_usernames_of_players(player_list)
 
         -- update rosters
         bulk_remove(usernames)
         return `updated {#usernames} players`
     end)
 
-    shared.dlcomp_command_bot.add_command("team_clear", "remove team restrictions from the specified team, or both", function(args: string, extra: command_call_info): string?
-        local team, parsed = shared.dlcomp_parser.get_team(args)
+    command_bot.add_command("team_clear", "remove team restrictions from the specified team, or both", function(args: string, extra: command_bot.command_call_info): string?
+        local team, parsed = arg_parser.get_team(args)
         -- let team be nil if the arg is empty, clears both teams
         if not team and parsed.converted_from ~= "" then
             return `unclear team {parsed.converted_from}`
@@ -402,13 +394,13 @@ do -- register chat commands
         return clear_roster(team)
     end)
 
-    shared.dlcomp_command_bot.add_command("team_lock", "", function(args: string, extra: command_call_info): string?
+    command_bot.add_command("team_lock", "", function(args: string, extra: command_bot.command_call_info): string?
         team_lock()
         return "teams locked"
     end)
 
-    shared.dlcomp_command_bot.add_command("team_limit", "sets how many players on a team can be spawned in at once", function(args: string, extra: command_call_info): string?
-        local team, team_parsed = shared.dlcomp_parser.get_team(args)
+    command_bot.add_command("team_limit", "sets how many players on a team can be spawned in at once", function(args: string, extra: command_bot.command_call_info): string?
+        local team, team_parsed = arg_parser.get_team(args)
         local limit, limit_parsed
         if not team then
             -- team is nil, two things couldve happened:
@@ -417,7 +409,7 @@ do -- register chat commands
             limit = tonumber(team_parsed.converted_from)
             limit_parsed = team_parsed
         else
-            limit, limit_parsed = shared.dlcomp_parser.get_number(team_parsed.remaining_text)
+            limit, limit_parsed = arg_parser.get_number(team_parsed.remaining_text)
         end
         
         -- limit arg can be nil to clear the limit, but make sure thats actually what the client wanted
@@ -441,7 +433,7 @@ do -- register chat commands
         end
     end)
 
-    shared.dlcomp_command_bot.add_command("team_status", "prints status for rosters", function(args: string, extra: command_call_info): string?
+    command_bot.add_command("team_status", "prints status for rosters", function(args: string, extra: command_bot.command_call_info): string?
         print_status()
         return "printed to console"
     end)
@@ -462,7 +454,7 @@ do -- event listeners
         end
         
         -- player is admin, notify but always let them spawn
-        local is_admin = table.find(shared.dlcomp_command_bot.admin_list, username)
+        local is_admin = table.find(command_bot.admin_list, username)
         if not in_roster and is_admin then
             chat.send_announcement(`letting admin [{username}] spawn despite roster restrictions`)
             return
@@ -497,7 +489,7 @@ do -- event listeners
     end)
 end
 
-shared.dlcomp_team = {
+return{
     rosters = rosters,
     max_spawned = max_spawned,
 
