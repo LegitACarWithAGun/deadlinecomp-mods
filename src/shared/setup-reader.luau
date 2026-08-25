@@ -1,4 +1,4 @@
-local rxi_json = require("../../dependencies/rxi-json")
+local rxi_json = require("../dependencies/rxi-json")
 
 export type setup_node = {
     attached: {setup_node},
