@@ -2,8 +2,9 @@
 
 local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
+local maid = require("../shared/maid").new("dlcomp-misc-commands")
 
-command_bot.add_command("cam", "changes the player's cam mode. format: ;cam mode [player]", function(args: string, extra: command_bot.command_call_info)
+maid["cmd-cam"] = command_bot.add_command("cam", "changes the player's cam mode. format: ;cam mode [player]", function(args: string, extra: command_bot.command_call_info)
 	local want_mode, parsed = arg_parser.get_string(args)
 	local player_list = arg_parser.remaining_players_throwing(parsed.remaining_text, {extra.caller})
 
@@ -13,7 +14,7 @@ command_bot.add_command("cam", "changes the player's cam mode. format: ;cam mode
 	return `set camera mode for {#player_list} players to {want_mode}`
 end)
 
-command_bot.add_command("rand", "selects a random value from the argument list", function(args: string, extra: command_bot.command_call_info)
+maid["cmd-rand"] = command_bot.add_command("rand", "selects a random value from the argument list", function(args: string, extra: command_bot.command_call_info)
 	-- gather args
 	local arg_list = arg_parser.remaining_strings(args)
 	if #arg_list < 2 then
@@ -27,4 +28,6 @@ command_bot.add_command("rand", "selects a random value from the argument list",
 	return arg_list[index]
 end)
 
-return nil
+return {
+	maid = maid,
+}

@@ -7,6 +7,7 @@
 local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
 local dlcomp_table = require("../shared/table")
+local maid = require("../shared/maid").new("dlcomp-geneva")
 
 -- rules
 local banned_weapon_list: {string} = {}
@@ -229,7 +230,7 @@ do -- implementation
         end
     end
 
-    on_player_spawned:Connect(function(player_name: string)
+    maid["signal-spawned"] = on_player_spawned:Connect(function(player_name: string)
         if not enforce_rules then
             return
         end
@@ -264,11 +265,11 @@ end
 
 
 -- chat commands
-command_bot.add_command("geneva_rules", "toggles geneva enforcing equipment rules", function(args: string)
+maid["cmd-rules"] = command_bot.add_command("geneva_rules", "toggles geneva enforcing equipment rules", function(args: string)
     local toggle, _ = arg_parser.get_bool(args)
     toggle_rules(toggle)
 end)
-command_bot.add_command("geneva_announce", "toggles whether geneva announces why a player's equipment got removed in chat", function(args: string)
+maid["cmd-announce"] = command_bot.add_command("geneva_announce", "toggles whether geneva announces why a player's equipment got removed in chat", function(args: string)
     local toggle, _ = arg_parser.get_bool(args)
     if toggle == nil then
         toggle = not announce_equipment_cleaning
@@ -295,4 +296,6 @@ return {
     get_weapon_name = get_weapon_name,
     iter_slots = iter_slots,
     collect_slots_containing = collect_slots_containing,
+
+    maid = maid,
 }

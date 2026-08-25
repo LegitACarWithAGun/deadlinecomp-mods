@@ -4,6 +4,7 @@ local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
 local dlcomp_table = require("../shared/table")
 local dlcomp_string = require("../shared/string")
+local maid = require("../shared/maid").new("dlcomp-team")
 
 local rosters: {[team_id]: {string}} = {}
 local max_spawned: {[team_id]: number} = {}
@@ -303,7 +304,7 @@ do -- controls
 end
 
 do -- register chat commands
-    command_bot.add_command("switch", "switch the team of the specified player", function(args: string)
+    maid["cmd-switch"] = command_bot.add_command("switch", "switch the team of the specified player", function(args: string)
         local team, parsed = arg_parser.get_team(args)
         -- ignore the parse for a team if we didnt find anything
         local remaining_args = parsed.remaining_text
@@ -327,17 +328,17 @@ do -- register chat commands
         return nil
     end)
 
-    command_bot.add_command("team_swap", "swap rosters and the teams of everyone", function(args: string): string?
+    maid["cmd-swap"] = command_bot.add_command("team_swap", "swap rosters and the teams of everyone", function(args: string): string?
         team_swap()
         return "teams and rosters have been swapped"
     end)
 
-    command_bot.add_command("team_scramble", "scramble players into teams randomly", function(args: string)
+    maid["cmd-scramble"] = command_bot.add_command("team_scramble", "scramble players into teams randomly", function(args: string)
         team_scramble()
         return "teams have been scrambled; rosters cleared"
     end)
 
-    command_bot.add_command("team_set", "set a roster for a specific team, format is team_set <TEAM> <PLAYER...>", function(args: string, extra: command_bot.command_call_info): string?
+    maid["cmd-set"] = command_bot.add_command("team_set", "set a roster for a specific team, format is team_set <TEAM> <PLAYER...>", function(args: string, extra: command_bot.command_call_info): string?
         local team, parsed = arg_parser.get_team(args)
         if not team then
             return "unclear team name, try ANTO or SYNO as the first arg"
@@ -359,7 +360,7 @@ do -- register chat commands
         return "success"
     end)
 
-    command_bot.add_command("team_add", "add player to a specific team's roster, format is team_add <TEAM> <PLAYER...>", function(args: string, extra: command_bot.command_call_info): string?
+    maid["cmd-add"] = command_bot.add_command("team_add", "add player to a specific team's roster, format is team_add <TEAM> <PLAYER...>", function(args: string, extra: command_bot.command_call_info): string?
         local team, parsed = arg_parser.get_team(args)
         if not team then
             return "unclear team name, try ANTO or SYNO as the first arg"
@@ -374,7 +375,7 @@ do -- register chat commands
         return `updated {#usernames} players`
     end)
 
-    command_bot.add_command("team_remove", "remove a player from rosters", function(args: string, extra: command_bot.command_call_info): string?
+    maid["cmd-remove"] = command_bot.add_command("team_remove", "remove a player from rosters", function(args: string, extra: command_bot.command_call_info): string?
         -- get players from args, and get the found player's usernames
         local player_list = arg_parser.remaining_players_throwing(args)
         local usernames = dlcomp_table.get_usernames_of_players(player_list)
@@ -384,7 +385,7 @@ do -- register chat commands
         return `updated {#usernames} players`
     end)
 
-    command_bot.add_command("team_clear", "remove team restrictions from the specified team, or both", function(args: string, extra: command_bot.command_call_info): string?
+    maid["cmd-clear"] = command_bot.add_command("team_clear", "remove team restrictions from the specified team, or both", function(args: string, extra: command_bot.command_call_info): string?
         local team, parsed = arg_parser.get_team(args)
         -- let team be nil if the arg is empty, clears both teams
         if not team and parsed.converted_from ~= "" then
@@ -394,12 +395,12 @@ do -- register chat commands
         return clear_roster(team)
     end)
 
-    command_bot.add_command("team_lock", "", function(args: string, extra: command_bot.command_call_info): string?
+    maid["cmd-lock"] = command_bot.add_command("team_lock", "", function(args: string, extra: command_bot.command_call_info): string?
         team_lock()
         return "teams locked"
     end)
 
-    command_bot.add_command("team_limit", "sets how many players on a team can be spawned in at once", function(args: string, extra: command_bot.command_call_info): string?
+    maid["cmd-limit"] = command_bot.add_command("team_limit", "sets how many players on a team can be spawned in at once", function(args: string, extra: command_bot.command_call_info): string?
         local team, team_parsed = arg_parser.get_team(args)
         local limit, limit_parsed
         if not team then
@@ -433,14 +434,14 @@ do -- register chat commands
         end
     end)
 
-    command_bot.add_command("team_status", "prints status for rosters", function(args: string, extra: command_bot.command_call_info): string?
+    maid["cmd-status"] = command_bot.add_command("team_status", "prints status for rosters", function(args: string, extra: command_bot.command_call_info): string?
         print_status()
         return "printed to console"
     end)
 end
 
 do -- event listeners
-    on_player_spawned:Connect(function(username: string)
+    maid["signal-spawned"] = on_player_spawned:Connect(function(username: string)
         local player = players.get(username)
         if not player then
             error(`couldnt find player object for spawning player [{username}]`)
@@ -479,7 +480,7 @@ do -- event listeners
         return
     end)
     
-    on_player_joined:Connect(function(username: string)
+    maid["signal-joined"] = on_player_joined:Connect(function(username: string)
         local player = players.get(username)
         if not player then
             error(`couldnt find player object for joining player [{username}]`)
@@ -508,4 +509,6 @@ return{
 
     is_in_roster = is_in_roster,
     print_status = print_status,
+
+    maid = maid,
 }

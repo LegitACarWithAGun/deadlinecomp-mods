@@ -6,6 +6,7 @@
 -- load command bot
 local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
+local maid = require("../shared/maid").new("dlcomp-countdown")
 
 local active_countdown: thread?
 local countdown_ended = Signal.new()
@@ -65,7 +66,7 @@ do -- countdown implementation
     end
 end
 
-command_bot.add_command("countdown", "starts a countdown in chat", function(args: string)
+maid["cmd-countdown"] = command_bot.add_command("countdown", "starts a countdown in chat", function(args: string)
     -- parse countdown duration
     local duration, _ = arg_parser.get_number(args, 5)
     duration = math.ceil(duration)
@@ -78,12 +79,16 @@ command_bot.add_command("countdown", "starts a countdown in chat", function(args
 
     trigger_countdown(duration)
 end)
-command_bot.add_command("freeze", "freeze the players in place", function(args: string)
+maid["cmd-freeze"] = command_bot.add_command("freeze", "freeze the players in place", function(args: string)
     freeze()
 end)
-command_bot.add_command("unfreeze", "lets the players walk around again", function(args: string)
+maid["cmd-unfreeze"] = command_bot.add_command("unfreeze", "lets the players walk around again", function(args: string)
     unfreeze()
 end)
+
+maid["module"] = function()
+    unfreeze()
+end
 
 return {
     countdown = trigger_countdown,
@@ -92,4 +97,6 @@ return {
     unfreeze = unfreeze,
 
     finished = countdown_ended,
+
+    maid = maid,
 }

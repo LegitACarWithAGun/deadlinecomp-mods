@@ -6,6 +6,7 @@
 
 local arg_parser = require("../shared/arg-parser")
 local dlcomp_string = require("../shared/string")
+local maid = require("../shared/maid").new("dlcomp-command-bot")
 
 
 export type command_call_info = {
@@ -34,6 +35,18 @@ function add_command(name: string, explanation: string, callback: command_callba
         explanation = explanation,
         callback = callback,
     }
+
+    -- callback to remove the command
+    return function()
+        -- do nothing if the command has already been overwritten
+        local cur_command = commands[name]
+        local cur_callback = cur_command and cur_command.callback
+        if cur_callback ~= callback then
+            return
+        end
+
+        commands[name] = nil
+    end
 end
 
 -- returns (is_changed, message)
@@ -134,7 +147,7 @@ function run(...: any)
 end
 
 -- listen for messages in chat
-chat.player_chatted:Connect(function(sender, channel, raw_message)
+maid["signal-chatted"] = chat.player_chatted:Connect(function(sender, channel, raw_message)
     -- check for and remove prefix
     local has_prefix, content = dlcomp_string.cut_prefix(raw_message, prefix)
     if not has_prefix then
@@ -163,7 +176,7 @@ end)
 
 -- built in commands
 -- TODO: page this
-add_command("help", "prints this message", function(args: string)
+maid["cmd-admin"] = add_command("help", "prints this message", function(args: string)
     local results = {}
     for _, info in pairs(commands) do
         table.insert(results, `{info.name} - {info.explanation}`)
@@ -171,7 +184,7 @@ add_command("help", "prints this message", function(args: string)
     return table.concat(results, "\n")
 end)
 
-add_command("admin", "toggles a player's ability to run commands, format: ;admin player_name [toggle]", function(args: string)
+maid["cmd-admin"] = add_command("admin", "toggles a player's ability to run commands, format: ;admin player_name [toggle]", function(args: string)
     local want_player, parsed, found_players = arg_parser.get_player(args)
     local toggle, _ = arg_parser.get_bool(parsed.remaining_text)
     
@@ -205,4 +218,6 @@ return {
     toggle_command_permissions = toggle_command_permissions,
     run = run,
     admin_list = admin_list,
+
+    maid = maid,
 }

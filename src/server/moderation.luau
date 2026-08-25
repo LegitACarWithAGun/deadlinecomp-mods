@@ -4,10 +4,11 @@ local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
 local dlcomp_table = require("../shared/table")
 local dlcomp_string = require("../shared/string")
+local maid = require("../shared/maid").new("dlcomp-moderation")
 
 local banned_players: {string} = {}
 
-command_bot.add_command("ban", "ban a list players from the server. use ;unban to revert", function(args: string)
+maid["cmd-ban"] = command_bot.add_command("ban", "ban a list players from the server. use ;unban to revert", function(args: string)
 	local found, unknown = arg_parser.remaining_players(args)
 
 	for _, player in found do
@@ -20,7 +21,7 @@ command_bot.add_command("ban", "ban a list players from the server. use ;unban t
 	return nil
 end)
 
-command_bot.add_command("unban", "unbans a list of players from the server", function(args: string)
+maid["cmd-unban"] = command_bot.add_command("unban", "unbans a list of players from the server", function(args: string)
 	local usernames = arg_parser.remaining_strings(args)
 	
 	local unbanned = {}
@@ -40,7 +41,7 @@ command_bot.add_command("unban", "unbans a list of players from the server", fun
 	return `unbanned {#unbanned} players; {unknown} bad args; see console`
 end)
 
-command_bot.add_command("kick", "kick a list of people from the server", function(args: string)
+maid["cmd-kick"] = command_bot.add_command("kick", "kick a list of people from the server", function(args: string)
 	local found, unknown = arg_parser.remaining_players(args)
 
 	for _, player in found do
@@ -52,7 +53,7 @@ command_bot.add_command("kick", "kick a list of people from the server", functio
 	return nil
 end)
 
-command_bot.add_command("kick_except", "kicks everyone except admins and a list of players ", function(args: string)
+maid["cmd-kick-except"] = command_bot.add_command("kick_except", "kicks everyone except admins and a list of players ", function(args: string)
 	local found, unknown = arg_parser.remaining_players(args)
 
 	-- dont allow admins to get kicked
@@ -80,7 +81,7 @@ command_bot.add_command("kick_except", "kicks everyone except admins and a list 
 	return nil
 end)
 
-command_bot.add_command("respawn", "spawns/respawns a list of players", function(args: string)
+maid["cmd-respawn"] = command_bot.add_command("respawn", "spawns/respawns a list of players", function(args: string)
 	local found, unknown = arg_parser.remaining_players(args)
 	
 	for _, player in found do
@@ -92,7 +93,7 @@ command_bot.add_command("respawn", "spawns/respawns a list of players", function
 	return nil
 end)
 
-command_bot.add_command("kill", "kills a list of players", function(args: string)
+maid["cmd-kill"] = command_bot.add_command("kill", "kills a list of players", function(args: string)
 	local found, unknown = arg_parser.remaining_players(args)
 	
 	for _, player in found do
@@ -105,7 +106,7 @@ command_bot.add_command("kill", "kills a list of players", function(args: string
 end)
 
 -- kick any banned players that try to rejoin
-on_player_joined:Connect(function(username: string)
+maid["signal-joined"] = on_player_joined:Connect(function(username: string)
 	if not table.find(banned_players, username) then
 		return
 	end
@@ -119,4 +120,6 @@ on_player_joined:Connect(function(username: string)
 	player.kick()
 end)
 
-return nil
+return {
+	maid = maid,
+}

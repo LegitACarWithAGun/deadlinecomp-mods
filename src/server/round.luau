@@ -3,6 +3,7 @@ local arg_parser = require("../shared/arg-parser")
 local dlcomp_countdown = require("./countdown")
 local dlcomp_table = require("../shared/table")
 local dlcomp_string = require("../shared/string")
+local maid = require("../shared/maid").new("dlcomp-round")
 
 local ROUND_COMMAND_FORMAT = ";round map_name game_mode [round_duration] [countdown_duration]"
 
@@ -111,7 +112,7 @@ end
 
 
 -- chat command
-command_bot.add_command("round", `starts a round with a countdown. format: {ROUND_COMMAND_FORMAT}`, function(args)
+maid["cmd-round"] = command_bot.add_command("round", `starts a round with a countdown. format: {ROUND_COMMAND_FORMAT}`, function(args)
     local map_name, game_mode, round_duration, countdown_duration, info
     map_name, info = arg_parser.get_string(args)
     game_mode, info = arg_parser.get_string(info.remaining_text)
@@ -141,7 +142,7 @@ command_bot.add_command("round", `starts a round with a countdown. format: {ROUN
     return
 end)
 
-command_bot.add_command("map", "loads a map", function(args)
+maid["cmd-map"] = command_bot.add_command("map", "loads a map", function(args)
     local want_map = arg_parser.get_string(args)
 
     local map_name, err = autocomplete_map(want_map)
@@ -153,7 +154,7 @@ command_bot.add_command("map", "loads a map", function(args)
     return `successfully loaded {map_name}`
 end)
 
-command_bot.add_command("gamemode", "starts the gamemode", function(args)
+maid["cmd-gamemode"] = command_bot.add_command("gamemode", "starts the gamemode", function(args)
     local want_gamemode = arg_parser.get_string(args)
     
     local mode, err = autocomplete_gamemode(want_gamemode)
@@ -170,7 +171,7 @@ end)
 
 -- signals
 -- countdown ended
-dlcomp_countdown.finished:Connect(function()
+maid["signal-countdown"] = dlcomp_countdown.finished:Connect(function()
     round_started()
 end)
 
@@ -181,4 +182,6 @@ return {
     prepare_round = prepare_round,
     gamemode_aliases = gamemode_aliases,
     low_priority_maps = low_priority_maps,
+    
+    maid = maid,
 }
