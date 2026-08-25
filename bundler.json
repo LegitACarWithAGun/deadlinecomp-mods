@@ -2,8 +2,8 @@
 	"bundles": [
 		{
 			"name": "dlcomp_server",
-			"entryPath": "./rulesets/default",
-			"outputPath": "./__main-bundle.luau"
+			"entryPath": "./src/server/rulesets/default.luau",
+			"outputPath": "./output/server.luau"
 		}
 	]
 }
