@@ -2,6 +2,11 @@
 	"luau-lsp.completion.imports.suggestServices": false,
     "luau-lsp.sourcemap.enabled": false,
 	"luau-lsp.fflags.enableNewSolver": true,
+	"emeraldwalk.runonsave": {
+		"commands": [{
+			"cmd": "dlcomp-bundler",
+		}],
+	},
 
 	// ^^^^ OPTIONAL ^^^^^
 	// -----------------
