@@ -4,34 +4,27 @@
 -- listens for commands written in chat and passes them to other modules
 -- exists because the built-in command bot doesnt let you register custom commands
 
--- check if a version of the bot is already running
-if shared.dlcomp_command_bot then
-    return
-end
+local arg_parser = require("../shared/arg-parser")
+local dlcomp_string = require("../shared/string")
+local maid = require("../shared/maid").new("dlcomp-command-bot")
 
--- load arg parser module
-if not shared.dlcomp_parser then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/arg-parser.luau")
-end
-if not shared.dlcomp_table then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/table.luau")
-end
-if not shared.dlcomp_string then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/string.luau")
-end
 
-local prefix = ";"
-local commands: {[string]: command_data} = {}
-local admin_list = {} -- see bottom of script for default admins
-local command_permissions = true -- whether commands are limited to admins only
-
-type command_callback = (args: string, extra: command_call_info) -> string?
-type command_data = {
+export type command_call_info = {
+    message_channel: string,
+    raw_message: string,
+    caller: player,
+}
+export type command_callback = (args: string, extra: command_call_info) -> string?
+export type command_data = {
     name: string,
     explanation: string,
     callback: command_callback,
 }
 
+local prefix = ";"
+local commands: {[string]: command_data} = {}
+local admin_list: {string} = {} -- see bottom of script for default admins, and 
+local command_permissions = true -- whether commands are limited to admins only
 
 
 
@@ -42,6 +35,18 @@ function add_command(name: string, explanation: string, callback: command_callba
         explanation = explanation,
         callback = callback,
     }
+
+    -- callback to remove the command
+    return function()
+        -- do nothing if the command has already been overwritten
+        local cur_command = commands[name]
+        local cur_callback = cur_command and cur_command.callback
+        if cur_callback ~= callback then
+            return
+        end
+
+        commands[name] = nil
+    end
 end
 
 -- returns (is_changed, message)
@@ -142,9 +147,9 @@ function run(...: any)
 end
 
 -- listen for messages in chat
-chat.player_chatted:Connect(function(sender, channel, raw_message)
+maid["signal-chatted"] = chat.player_chatted:Connect(function(sender, channel, raw_message)
     -- check for and remove prefix
-    local has_prefix, content = shared.dlcomp_string.cut_prefix(raw_message, prefix)
+    local has_prefix, content = dlcomp_string.cut_prefix(raw_message, prefix)
     if not has_prefix then
         return
     end
@@ -171,7 +176,7 @@ end)
 
 -- built in commands
 -- TODO: page this
-add_command("help", "prints this message", function(args: string)
+maid["cmd-admin"] = add_command("help", "prints this message", function(args: string)
     local results = {}
     for _, info in pairs(commands) do
         table.insert(results, `{info.name} - {info.explanation}`)
@@ -179,35 +184,22 @@ add_command("help", "prints this message", function(args: string)
     return table.concat(results, "\n")
 end)
 
-add_command("admin", "toggles a player's ability to run commands, format: ;admin player_name [toggle]", function(args: string)
-    local want_player, parsed, found_players = shared.dlcomp_parser.get_player(args)
-    local toggle, _ = shared.dlcomp_parser.get_bool(parsed.remaining_text)
-
+maid["cmd-admin"] = add_command("admin", "toggles a player's ability to run commands, format: ;admin player_name [toggle]", function(args: string)
+    local want_player, parsed, found_players = arg_parser.get_player(args)
+    local toggle, _ = arg_parser.get_bool(parsed.remaining_text)
+    
     -- no args given, print the name of every admin
     if not string.match(args, "%S+") then
-        shared.dlcomp_string.print_array_tall("dlcomp_command_bot admins", admin_list)
+        dlcomp_string.print_array_tall("dlcomp_command_bot admins", admin_list)
         return "printed admin list to server console"
     end
 
     -- error if we didnt find exactly 1 player
-    want_player, _ = shared.dlcomp_parser.assert_get_player(want_player, parsed, found_players)
+    want_player, _ = arg_parser.assert_get_player(want_player, parsed, found_players)
 
     local success, message = toggle_admin(want_player.name, toggle)
     return `{success and "SUCCESS" or "FAIL"}: {message}`
 end)
-
-
-
-
-
--- let other modules add/remove commands
-shared.dlcomp_command_bot = {
-    add_command = add_command,
-    toggle_admin = toggle_admin,
-    toggle_command_permissions = toggle_command_permissions,
-    run = run,
-    admin_list = admin_list,
-}
 
 
 
@@ -220,3 +212,12 @@ local default_admin = function_caller or sharedvars.vip_owner
 toggle_admin(default_admin, true)
 
 chat.send_announcement(`loaded dlcomp_command_bot; default admin is [{default_admin}]; say {prefix}help to get a list of commands`)
+return {
+    add_command = add_command,
+    toggle_admin = toggle_admin,
+    toggle_command_permissions = toggle_command_permissions,
+    run = run,
+    admin_list = admin_list,
+
+    maid = maid,
+}

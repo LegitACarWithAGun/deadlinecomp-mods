@@ -4,12 +4,12 @@
 -- todo: figure out how to freeze the round timer
 
 -- load command bot
-if not shared.dlcomp_command_bot then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/command-bot.luau")
-end
+local command_bot = require("./command-bot")
+local arg_parser = require("../shared/arg-parser")
+local maid = require("../shared/maid").new("dlcomp-countdown")
 
 local active_countdown: thread?
-local countdown_ended = Signal.new() :: Signal<>
+local countdown_ended = Signal.new()
 
 function freeze()
     sharedvars.plr_speed = 0.05 -- 0 seems to completely despawn your gun? lol
@@ -66,9 +66,9 @@ do -- countdown implementation
     end
 end
 
-shared.dlcomp_command_bot.add_command("countdown", "starts a countdown in chat", function(args: string)
+maid["cmd-countdown"] = command_bot.add_command("countdown", "starts a countdown in chat", function(args: string)
     -- parse countdown duration
-    local duration, _ = shared.dlcomp_parser.get_number(args, 5)
+    local duration, _ = arg_parser.get_number(args, 5)
     duration = math.ceil(duration)
 
     -- treat duration <= 0 as cancel, simplest way
@@ -79,18 +79,24 @@ shared.dlcomp_command_bot.add_command("countdown", "starts a countdown in chat",
 
     trigger_countdown(duration)
 end)
-shared.dlcomp_command_bot.add_command("freeze", "freeze the players in place", function(args: string)
+maid["cmd-freeze"] = command_bot.add_command("freeze", "freeze the players in place", function(args: string)
     freeze()
 end)
-shared.dlcomp_command_bot.add_command("unfreeze", "lets the players walk around again", function(args: string)
+maid["cmd-unfreeze"] = command_bot.add_command("unfreeze", "lets the players walk around again", function(args: string)
     unfreeze()
 end)
 
-shared.dlcomp_countdown = {
+maid["module"] = function()
+    unfreeze()
+end
+
+return {
     countdown = trigger_countdown,
     cancel_countdown = cancel_countdown,
     freeze = freeze,
     unfreeze = unfreeze,
 
     finished = countdown_ended,
+
+    maid = maid,
 }

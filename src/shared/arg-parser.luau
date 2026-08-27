@@ -4,12 +4,8 @@
 -- intended to use arguments attached to chat commands
 -- in its own module and not integrated into the command-bot because I dont wanna get in the way of people doing their own thing with their arguments
 
-if not shared.dlcomp_table then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/table.luau")
-end
-if not shared.dlcomp_string then
-    require("https://raw.githubusercontent.com/LegitACarWithAGun/deadlinecomp-mods/refs/heads/main/string.luau")
-end
+local dlcomp_string = require("./string")
+local dlcomp_table = require("./table")
 
 -- text that will get coereced into a boolean if passed to get_bool
 -- keep entries lowercase
@@ -20,6 +16,13 @@ local false_text = {"false", "f", "off", "disable", "0"}
 -- keep entries lowercase
 local anto_text = {"anto", "attacker"}
 local syno_text = {"syno", "defender"}
+
+export type command_parse_info = {
+	--- all the text After the current argument
+    remaining_text: string,
+    --- the string the return value value was made from, the raw argument section, useful if you wanna re-parse after a fail
+    converted_from: string,
+}
 
 -- creates a new parse_info instance, just for convenience
 -- see _interface.d.luau for the command_parse_info interface
@@ -36,7 +39,7 @@ function get_string(args: string): (string, command_parse_info)
     local info = new_info()
 
     -- remove whitespace from start
-    args = shared.dlcomp_string.trim_start(args)
+    args = dlcomp_string.trim_start(args)
 
     -- scan until next whitespace
     local current_arg = string.match(args, "^%S*") or ""
@@ -87,7 +90,7 @@ function get_player(args: string): (player?, command_parse_info, {player})
     -- turn everything lowercase
     want_name = string.lower(want_name)
 
-    local found_players = shared.dlcomp_table.filter(players.get_all(), function(player: player): boolean
+    local found_players = dlcomp_table.filter(players.get_all(), function(player: player): boolean
         local player_name = string.lower(player.name)
 
         -- does the player's name at-least partially match the input
@@ -136,7 +139,7 @@ function remaining_players(args: string): ({player}, {[string]: {player}})
     local result = {}
     local unknown = {}
 
-    local remaining = shared.dlcomp_string.trim_end(args)
+    local remaining = dlcomp_string.trim_end(args)
     repeat
         local player, parsed, found = get_player(remaining)
         if player then
@@ -162,14 +165,14 @@ function assert_get_player(player: player?, parsed: command_parse_info, found: {
     if #found == 0 then
         error(`no players match the input {parsed.converted_from}`)
     else
-        local usernames = shared.dlcomp_table.get_usernames_of_players(found)
-        shared.dlcomp_string.print_array_tall("get_player found", usernames)
+        local usernames = dlcomp_table.get_usernames_of_players(found)
+        dlcomp_string.print_array_tall("get_player found", usernames)
         error(`found {#found} players matching input {parsed.converted_from}; see console for a list`)
     end
 end
 
 function assert_remaining_players(found: {player}, unknown: {[string]: {player}}, default: {player}?): {player}
-    if shared.dlcomp_table.is_empty(unknown) then
+    if dlcomp_table.is_empty(unknown) then
         if #found == 0 and default then
             return default
         else
@@ -181,7 +184,7 @@ function assert_remaining_players(found: {player}, unknown: {[string]: {player}}
     print( fmt_remaining_players_unknown(unknown) )
     print()
 
-    local unknown_key_count = shared.dlcomp_table.get_size(unknown)
+    local unknown_key_count = dlcomp_table.get_size(unknown)
     error(`remaining_players could not find a corresponding player for {unknown_key_count} args; see console for a list`)
 end
 
@@ -203,7 +206,7 @@ end
 function fmt_remaining_players_unknown(unknown: {[string]: {player}}): string
     local lines = {}
     for input, found_players in unknown do
-        local usernames = shared.dlcomp_table.get_usernames_of_players(found_players)
+        local usernames = dlcomp_table.get_usernames_of_players(found_players)
         local fmt_list = #usernames > 1 and table.concat(usernames, " ") or "== no players found =="
         table.insert(lines, `"{input}": {fmt_list}`)
     end
@@ -214,7 +217,7 @@ end
 
 
 
-shared.dlcomp_parser = {
+return {
     get_string = get_string,
     get_number = get_number,
     get_bool = get_bool,

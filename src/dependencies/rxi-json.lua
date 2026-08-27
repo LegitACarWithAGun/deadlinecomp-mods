@@ -408,4 +408,4 @@ function json.decode(str)
   return res
 end
 
-shared.rxi_json = json
+return json

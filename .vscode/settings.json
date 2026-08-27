@@ -2,6 +2,11 @@
 	"luau-lsp.completion.imports.suggestServices": false,
     "luau-lsp.sourcemap.enabled": false,
 	"luau-lsp.fflags.enableNewSolver": true,
+	"emeraldwalk.runonsave": {
+		"commands": [{
+			"cmd": "dlcomp-bundler",
+		}],
+	},
 
 	// ^^^^ OPTIONAL ^^^^^
 	// -----------------
@@ -25,7 +30,7 @@
 		// comment this one out when not actively doing stuff on client scripts, overrides some server globals
 		// "client-globals": "./deadline-types/client/client-globals.d.luau",
 
-		"dlcomp-interface": "./_interface.d.luau",
+		// "dlcomp-interface": "./_interface.d.luau",
 	},
 
 	// generated using ./src/disabled_globals.luau

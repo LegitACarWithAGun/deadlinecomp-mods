@@ -1,0 +1,9 @@
+{
+	"bundles": [
+		{
+			"name": "dlcomp_server",
+			"entryPath": "./src/server/rulesets/default.luau",
+			"outputPath": "./output/server.luau"
+		}
+	]
+}
