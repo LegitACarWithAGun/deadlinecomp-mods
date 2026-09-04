@@ -23,8 +23,10 @@ export type command_data = {
 
 local prefix = ";"
 local commands: {[string]: command_data} = {}
-local admin_list: {string} = {} -- see bottom of script for default admins, and 
-local command_permissions = true -- whether commands are limited to admins only
+local admin_list: {string} = {} -- see bottom of file for default admins
+local command_permissions = true -- anyone can execute commands through the chat if this is false, otherwise only admins can
+-- (chat has been disabled for 5 months now..)
+-- does not limit who can run commands through the console
 
 
 
@@ -177,7 +179,7 @@ end)
 
 -- built in commands
 -- TODO: page this
-maid["cmd-admin"] = add_command("help", "prints this message", function(args: string)
+maid["cmd-help"] = add_command("help", "prints this message", function(args: string)
     local results = {}
     for _, info in pairs(commands) do
         table.insert(results, `{info.name} - {info.explanation}`)
