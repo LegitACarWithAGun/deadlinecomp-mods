@@ -58,15 +58,20 @@ function partial_match_sections(haystack: {string}, needle: string, seperator: s
     return output
 end
 
--- does nothing if the prefix doesnt exist in the text
--- returns (found, remaining)
+function has_prefix(text: string, prefix: string): boolean
+    return text:sub(1, prefix:len()) ~= prefix
+end
+--- does nothing if the prefix doesnt exist in the text
+--- returns (found, remaining)
 function cut_prefix(text: string, prefix: string): (boolean, string)
-    -- check for prefix
-    if text:sub(1, prefix:len()) ~= prefix then
+    if has_prefix(text, prefix) then
         return false, text
     end
-    -- remove the prefix
     return true, text:sub(prefix:len()+1)
+end
+function trim_prefix(text: string, prefix: string): string
+    local _, remaining = cut_prefix(text, prefix)
+    return remaining
 end
 
 function print_array_tall<T>(header: string?, array: {T}): ()
@@ -93,6 +98,8 @@ return {
     trim_end = trim_end,
     trim = trim,
 	partial_match_sections = partial_match_sections,
+    has_prefix = has_prefix,
     cut_prefix = cut_prefix,
+    trim_prefix = trim_prefix,
     print_array_tall = print_array_tall,
 }
