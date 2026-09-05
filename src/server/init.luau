@@ -7,6 +7,7 @@ local _ = {
     require("@self/moderation"),
     require("@self/round"),
     require("@self/team"),
+    require("@self/disconnect-log"),
 }
 
 -- workaround to allow running commands through the console
