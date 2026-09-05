@@ -5,6 +5,8 @@ local arg_parser = require("../shared/arg-parser")
 
 local module = {
 	enabled = true,
+
+	maid = maid,
 }
 
 maid["signal-joined"] = on_player_joined:Connect(function(username: string)
