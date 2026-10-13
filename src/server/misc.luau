@@ -1,5 +1,3 @@
---!strict
-
 local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
 local maid = require("../shared/maid").new("dlcomp-misc-commands")

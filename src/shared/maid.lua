@@ -1,5 +1,3 @@
---!strict
-
 -- this is essentially an old version of Nevermore/Quenty Maid
 -- - we dont have access to typeof, so Im slightly less sure about stuff when cleaning up
 -- - added an optional _origin property so it isnt a complete nightmare to try to track down errors

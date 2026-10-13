@@ -1,5 +1,3 @@
---!strict
-
 -- Argument Parser module
 -- intended to use arguments attached to chat commands
 -- in its own module and not integrated into the command-bot because I dont wanna get in the way of people doing their own thing with their arguments

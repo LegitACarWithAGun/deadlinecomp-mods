@@ -1,5 +1,3 @@
---!strict
-
 -- Command Bot module
 -- listens for commands written in chat and passes them to other modules
 -- exists because the built-in command bot doesnt let you register custom commands

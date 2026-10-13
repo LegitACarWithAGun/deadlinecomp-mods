@@ -1,5 +1,3 @@
---!strict
-
 --- strings input by the client, should support infinite depth
 export type flattable_strings = string | {string}
 

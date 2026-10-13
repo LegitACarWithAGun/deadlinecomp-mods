@@ -1,5 +1,3 @@
---!strict
-
 -- just removes whitespace from the start of a string
 function trim_start(str: string): string
     local output, _ = string.gsub(str, "^%s+", "", 1)

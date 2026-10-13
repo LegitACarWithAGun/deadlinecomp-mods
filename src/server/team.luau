@@ -1,5 +1,3 @@
---!strict
-
 local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
 local dlcomp_table = require("../shared/table")
