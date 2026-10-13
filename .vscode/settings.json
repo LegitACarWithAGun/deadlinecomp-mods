@@ -1,6 +1,6 @@
 {
 	"luau-lsp.completion.imports.suggestServices": false,
-    "luau-lsp.sourcemap.enabled": false,
+	"luau-lsp.sourcemap.enabled": false,
 	"luau-lsp.fflags.enableNewSolver": true,
 	"emeraldwalk.runonsave": {
 		"commands": [{
@@ -19,18 +19,16 @@
 	"luau-lsp.types.definitionFiles": {
 		// shared
 		"deadline-shared-types": "./deadline-types/shared/shared-types.d.luau",
-        "deadline-shared-globals": "./deadline-types/shared/shared-globals.d.luau",
-        "deadline-shared-vars": "./deadline-types/shared/sharedvars.d.luau",
+		"deadline-shared-globals": "./deadline-types/shared/shared-globals.d.luau",
+		"deadline-shared-vars": "./deadline-types/shared/sharedvars.d.luau",
 
 		// server
-        "deadline-server-globals": "./deadline-types/server/server-globals.d.luau",
-        
+		"deadline-server-globals": "./deadline-types/server/server-globals.d.luau",
+
 		// client
 		"deadline-client-keybind-names": "./deadline-types/client/keybind_name.d.luau",
 		// comment this one out when not actively doing stuff on client scripts, overrides some server globals
 		// "client-globals": "./deadline-types/client/client-globals.d.luau",
-
-		// "dlcomp-interface": "./_interface.d.luau",
 	},
 
 	// generated using ./src/disabled_globals.luau

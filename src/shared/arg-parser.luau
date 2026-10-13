@@ -25,7 +25,6 @@ export type command_parse_info = {
 }
 
 -- creates a new parse_info instance, just for convenience
--- see _interface.d.luau for the command_parse_info interface
 function new_info(): command_parse_info
     return {
         remaining_text = "",
