@@ -4,6 +4,7 @@
 -- Im hoping shibe adds the original to the globals sometime, since its already accessible through gamemodes
 
 local Maid = {}
+Maid.__index = Maid
 
 type MaidData = {
 	[string]: any,
@@ -43,16 +44,15 @@ function Maid.DoCleaning(self: Maid): ()
 end
 Maid.Destroy = Maid.DoCleaning
 
-function Maid.clean_arg(task: any): err
-	task = task :: never -- shut the type system up, refuses to work with me here
-
-	if type(task) == "function" then
+function Maid.clean_arg(task: never): err
+	local task_type = type(task)
+	if task_type == "function" then
 		task()
 		return nil
 	end
 
-	if type(task) ~= "table" then
-		return "task is not a function or table"
+	if task_type ~= "table" and task_type ~= "userdata" then
+		return "task is not a function, table, or userdata"
 	end
 
 	-- TODO: be more thoughtful about what you do with the object
@@ -69,7 +69,7 @@ function Maid.clean_arg(task: any): err
 		return nil
 	end
 
-	return "task is a table, didnt find a key to call"
+	return "task is a table or userdata, but we didnt find a key to call"
 end
 
 function Maid.__index(self: Maid, key: any)
