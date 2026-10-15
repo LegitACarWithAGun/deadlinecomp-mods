@@ -31,7 +31,7 @@ export type geneva_context = {
 }
 export type custom_geneva_rule = {
     name: string,
-    callback: (player: player) -> string?
+    callback: (player: player, geneva_context) -> string?
 }
 
 do -- human-facing command-line stuff
@@ -112,15 +112,12 @@ do -- helper functions
         player.set_weapon(slot, "nothing")
     end
 
-    function get_weapon_type(weapon: weapon_data): string
-        return weapon.type
-    end
     -- returns true if weapon type is unknown
     function remove_if_unknown_weapon_type(player: player, context: geneva_context, slot: string, weapon: weapon_data): boolean
-        local success, weapon_type = pcall(get_weapon_type, weapon)
+        local success, weapon_type = pcall(function() return weapon.type end, weapon)
         if not success then
             clear_slot(player, context, slot, `failed to get weapon type: {weapon_type}`)
-            return
+            return false
         end
 
         if table.find(known_weapon_types, weapon_type) then
@@ -132,33 +129,38 @@ do -- helper functions
         return true
     end
     function get_weapon_name(weapon: weapon_data): string
-        local weapon_type = get_weapon_type(weapon)
-        if weapon_type == "weapon" then
+        if weapon.type == "weapon" then
             return weapon.client_data.name
-        elseif weapon_type == "throwable" or "healing" then
+        elseif weapon.type == "throwable" or weapon.type == "healing" then
             return weapon.name
         else
-            error(`unknown weapon type: {weapon_type}`)
+            error(`unknown weapon type: {weapon.type}`)
+            return "N/A"
         end
     end
 
     --- iterate over every filled slot in the player's inventory, returning slot_name and weapon_data
-    function iter_slots(player: player)
+    function iter_slots(player: player): () -> (weapon_slot?, weapon_data)
         local slot_index = 1
+        --- needs to return a fake non-nil value when ending the loop to not upset the type system
+        local empty_slot_data = {type="N/A"} :: weapon_data
         return function()
-
             while (slot_index <= #slot_order) do
                 local slot_name = slot_order[slot_index]
-                local slot_data = player.get_weapon_data_from_character(slot_name)
-
+                if not slot_name then
+                    return nil, empty_slot_data
+                end
                 slot_index += 1
-                if slot_data == nil then
+    
+                local slot_data = player.get_weapon_data_from_character(slot_name)
+                if not slot_data then
                     continue
                 end
+
                 return slot_name, slot_data
             end
-            
-            return nil
+
+            return nil, empty_slot_data
         end
     end
 
@@ -236,6 +238,11 @@ do -- implementation
         end
 
         local player = players.get(player_name)
+        if not player then
+            warn("geneva: player spawned with no object:", player_name)
+            return
+        end
+
         local context: geneva_context = {
             feedback = {},
             allowed_nades_left = max_equippable_grenades,
@@ -268,6 +275,7 @@ end
 maid["cmd-rules"] = command_bot.add_command("geneva_rules", "toggles geneva enforcing equipment rules", function(args: string)
     local toggle, _ = arg_parser.get_bool(args)
     toggle_rules(toggle)
+    return nil
 end)
 maid["cmd-announce"] = command_bot.add_command("geneva_announce", "toggles whether geneva announces why a player's equipment got removed in chat", function(args: string)
     local toggle, _ = arg_parser.get_bool(args)
@@ -292,7 +300,6 @@ return {
     announce_ruleset = announce_ruleset,
     -- helper functions
     clear_slot = clear_slot,
-    get_weapon_type = get_weapon_type,
     get_weapon_name = get_weapon_name,
     iter_slots = iter_slots,
     collect_slots_containing = collect_slots_containing,

@@ -116,8 +116,11 @@ maid["cmd-round"] = command_bot.add_command("round", `starts a round with a coun
     local map_name, game_mode, round_duration, countdown_duration, info
     map_name, info = arg_parser.get_string(args)
     game_mode, info = arg_parser.get_string(info.remaining_text)
-    round_duration, info = arg_parser.get_number(info.remaining_text, sharedvars.gm_match_time_minutes, 1)
-    countdown_duration, info = arg_parser.get_number(info.remaining_text, last_countdown_duration, 5)
+    round_duration, info = arg_parser.get_number(info.remaining_text)
+    countdown_duration, info = arg_parser.get_number(info.remaining_text)
+
+    round_duration = arg_parser.number_default_min_max(round_duration, sharedvars.gm_match_time_minutes, 1)
+    countdown_duration = arg_parser.number_default_min_max(countdown_duration, last_countdown_duration, 5)
 
     -- handle arguments
     -- are all the required arguments given?
@@ -139,7 +142,7 @@ maid["cmd-round"] = command_bot.add_command("round", `starts a round with a coun
     end
 
     prepare_round(map_name, game_mode, round_duration, countdown_duration)
-    return
+    return nil
 end)
 
 maid["cmd-map"] = command_bot.add_command("map", "loads a map", function(args)

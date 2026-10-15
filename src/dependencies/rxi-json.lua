@@ -1,3 +1,5 @@
+--!nonstrict
+
 --
 -- json.lua
 -- https://github.com/rxi/json.lua
@@ -396,7 +398,7 @@ parse = function(str, idx)
 end
 
 
-function json.decode(str)
+function json.decode(str: string)
   if type(str) ~= "string" then
     error("expected argument of type string, got " .. type(str))
   end

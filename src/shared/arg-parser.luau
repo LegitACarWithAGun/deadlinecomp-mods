@@ -52,17 +52,18 @@ end
 -- will return nil if it cant be turned into a number, but the returned info will still remove the section
 function get_number(args: string, default: number?, min: number?, max: number?): (number?, command_parse_info)
     local arg, info = get_string(args)
+    return tonumber(arg), info
+end
 
-    -- process arg
-    local result = tonumber(arg) or default
-    if result and min then
-        result = math.max(result, min)
+function number_default_min_max(input: number?, default: number?, min: number?, max: number?): number
+    input = input or default
+    if min then
+        return input and math.max(input, min) or min
     end
-    if result and max then
-        result = math.min(result, max)
+    if max then
+        return input and math.min(input, max) or max
     end
-
-    return result, info
+    return input or 0
 end
 
 -- treats the next argument as a boolean
@@ -229,4 +230,6 @@ return {
 
     get_player_throwing = get_player_throwing,
     remaining_players_throwing = remaining_players_throwing,
+
+    number_default_min_max = number_default_min_max,
 }

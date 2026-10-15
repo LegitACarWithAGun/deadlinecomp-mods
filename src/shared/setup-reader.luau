@@ -30,7 +30,7 @@ function iter_descendants(node: setup_node, include_self: boolean): () -> setup_
 
 		-- add nodes from the next depth
 		local node = cur_nodes[i]
-		for _, child in pairs(node.attached) do
+		for _, child in node.attached do
 			table.insert(next_nodes, child)
 		end
 
@@ -73,8 +73,17 @@ end
 --- prints all the attachments of the equipped weapon
 function print_equipped_attachments(want_player: string?, slot_name: string?)
 	want_player = want_player or function_caller
-	local player = players.get(want_player :: string) --- TODO: this errors without overriding the type
+	local player = players.get(want_player :: string)
+	if not player then
+		error(`{want_player} is not in the server`)
+		return
+	end
+
 	slot_name = slot_name or player.get_active_slot()
+	if not slot_name then
+		error("no slot specified + player isnt using a slot")
+		return
+	end
 
 	local weapon = player.get_weapon_data_from_character(slot_name)
 	if weapon.type == "throwable" then

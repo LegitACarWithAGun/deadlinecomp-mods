@@ -68,22 +68,25 @@ end
 
 maid["cmd-countdown"] = command_bot.add_command("countdown", "starts a countdown in chat", function(args: string)
     -- parse countdown duration
-    local duration, _ = arg_parser.get_number(args, 5)
-    duration = math.ceil(duration)
+    local duration, _ = arg_parser.get_number(args)
+    duration = math.ceil(duration or 5)
 
     -- treat duration <= 0 as cancel, simplest way
     if duration <= 0 then
         cancel_countdown()
-        return
+        return nil
     end
 
     trigger_countdown(duration)
+    return nil
 end)
 maid["cmd-freeze"] = command_bot.add_command("freeze", "freeze the players in place", function(args: string)
     freeze()
+    return nil
 end)
 maid["cmd-unfreeze"] = command_bot.add_command("unfreeze", "lets the players walk around again", function(args: string)
     unfreeze()
+    return nil
 end)
 
 maid["module"] = function()
