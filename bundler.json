@@ -7,6 +7,11 @@
 			"name": "dlcomp_server",
 			"entry": "./src/server/rulesets/default.luau",
 			"output": "server.luau"
+		},
+		{
+			"name": "dlcomp_client",
+			"entry": "./src/client/init.luau",
+			"output": "client.luau"
 		}
 	]
 }

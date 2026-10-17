@@ -6,6 +6,7 @@ require("@self/moderation")
 require("@self/round")
 require("@self/team")
 require("@self/disconnect-log")
+require("@self/replicate-server")
 
 -- workaround to allow running commands through the console
 shared.dlcomp_command_bot = require("@self/command-bot")

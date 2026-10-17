@@ -70,6 +70,28 @@ end
 function contains<T>(tbl: {T}, value: T): boolean
     return table.find(tbl, value) ~= nil
 end
+
+function find_first<K, T>(haystack: {[K]: T}, needle: T): K?
+    for i, v in haystack do
+        if v ~= needle then continue end
+        return i
+    end
+    return nil
+end
+function find_first_callback<K, T>(haystack: {[K]: T}, callback: (T) -> boolean): K?
+    for i, v in haystack do
+        if not callback(v) then continue end
+        return i
+    end
+    return nil
+end
+
+function find_first_value_callback<T>(haystack: {[any]: T}, callback: (T) -> boolean): T?
+    local i = find_first_callback(haystack, callback)
+    if i == nil then return nil end
+    return haystack[i]
+end
+
 function partial_match(haystack: {string}, needle: string): {string}
     local matches = {}
     for _, v in haystack do
@@ -178,6 +200,9 @@ return {
     not_in_filter = not_in_filter,
     scramble = scramble,
     contains = contains,
+    find_first = find_first,
+    find_first_callback = find_first_callback,
+    find_first_value_callback = find_first_value_callback,
     partial_match = partial_match,
     remove_value = remove_value,
     append_unique = append_unique,
