@@ -2,7 +2,6 @@
 
 local input_helper = require("./input-helper")
 local Maid = require("../shared/maid")
-local metronome = require("../shared/metronome")
 local esp = require("./esp")
 
 --- for cleaning up the rendering and input callbacks required for the freecam class to function properly
@@ -17,10 +16,12 @@ local module = {
 }
 
 -- config
-local disable_delay = 3
+--- heartbeats (frames) to wait before disabling itself, 
+--- since deadline doesnt let us read or listen to the active camera mode
+local disable_after = 15
 
 -- state
-local last_active_tick = -1
+local frames_without_update = 0
 local freecam_active = false
 local inputs = {
 	sprint = false,
@@ -102,19 +103,19 @@ end
 
 
 
-
+--- call every time the freecam updates, since deadline doesnt let us read or listen to the active camera mode
 function activate()
-	last_active_tick = tick()
+	frames_without_update = 0
 	if freecam_active then return end
 	freecam_active = true
 	
 	maid_active["activator-dlcomp_esp"] = esp.activator:Subscribe("dlcomp-freecam")
 	maid_active["client_input_group"] = map_inputs()
 
-	--- check if we're still in the freecam
-	--- since deadline doesnt let us read or listen to the active camera mode
-	maid_active["metronome-check_is_active"] = metronome.new(1, function()
-		if (last_active_tick + disable_delay) > tick() then return end
+	-- check if we're still in the freecam
+	maid_active["heartbeat-is_active"] = time.heartbeat("dlcomp-freecam-is_active", function()
+		frames_without_update += 1
+		if disable_after > frames_without_update then return end
 		disable()
 	end)
 end
