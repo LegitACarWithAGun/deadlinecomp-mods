@@ -4,6 +4,7 @@
 local replicate = require("./replicate-client")
 local dlcomp_avatar = require("./avatar")
 local ui_helper = require("./ui-helper")
+local resolution = require("./resolution")
 local activator = require("../shared/activator").new("dlcomp-esp")
 
 local module = {
@@ -70,7 +71,7 @@ do -- player markers
 			end
 
 			-- get position for marker
-			local screenspace_location = ui_helper.world_to_viewport(framework.character.get_camera_cframe(), ui_helper.resolution, fov, torso.position)
+			local screenspace_location = ui_helper.world_to_viewport(framework.character.get_camera_cframe(), resolution.resolution, fov, torso.position)
 			local screenspace_v2 = Vector2.new(screenspace_location.X, screenspace_location.Y)
 			if screenspace_location.Z < 0 then
 				continue
@@ -142,7 +143,7 @@ function iris_render()
 end
 
 activator.OnEnable:Connect(function()
-	activator:Bind(replicate.activator, dlcomp_avatar.activator)
+	activator:Bind(replicate.activator, dlcomp_avatar.activator, resolution.activator)
 
 	activator.maid["iris"] = iris:Connect(iris_render)
 

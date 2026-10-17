@@ -1,18 +1,4 @@
-local Maid = require("../shared/maid");
-local metronome = require("../shared/metronome")
-
-local maid = Maid.new("ui-helper")
-local module = {
-	maid = maid
-}
-
--- config
-local resolution_query_frequency = 5
-
-module.resolution = Vector2.new(1920, 1080)
-
--- internal state
-local resolution_query_window
+local module = {}
 
 function module.minimal_window_args(title: string): {string|boolean}
 	local output = table.create(10, true) :: any
@@ -43,42 +29,5 @@ function module.world_to_viewport(camera_cframe: CFrame, resolution: Vector2, fo
 
 	return Vector3.new(pixels_x, pixels_y, depth), on_screen
 end
-
-
-
-
-
-
--- we dont seem to have a way to directly get the resolution
--- just oversize a iris window, update it, and then read the size (only seems to clamp it with ForceRefresh)
-local function query_current_resolution(): ()
-	local target = resolution_query_window
-	if not target then
-		return
-	end
-
-	target.size:set(Vector2.one * 8000)
-	target.position:set(Vector2.zero)
-	target.isUncollapsed:set(false)
-	iris.ForceRefresh()
-	task.wait(0.5)
-	module.resolution = target.size:get()
-end
-
-maid["iris-resolution_query"] = iris:Connect(function()
-	iris.PushConfig({
-		WindowBorderSize = 0,
-		IgnoreGuiInset = true,
-		WindowPadding = Vector2.zero,
-	})
-
-	local query_uncollapsed = iris.State(false)
-	resolution_query_window = iris.Window(module.minimal_window_args("resolution query"), {isUncollapsed = query_uncollapsed})
-	iris.End()
-
-	iris.PopConfig()
-end)
-
-maid["metronome-resolution_query"] = metronome.new(resolution_query_frequency, query_current_resolution)
 
 return module
