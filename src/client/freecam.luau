@@ -3,16 +3,10 @@
 local input_helper = require("./input-helper")
 local Maid = require("../shared/maid")
 local esp = require("./esp")
-
---- for cleaning up the rendering and input callbacks required for the freecam class to function properly
-local maid_active = Maid.new("dlcomp-freecam active")
-
---- for cleaning up the entire module
-local maid_module = Maid.new("dlcomp-freecam module")
-maid_module["maid-active"] = maid_active
+local maid = Maid.new("dlcomp-freecam active")
 
 local module = {
-	maid = maid_module,
+	maid = maid,
 }
 
 -- config
@@ -31,6 +25,7 @@ local inputs = {
 	moveStrafe = 0,
 	moveVertical = 0,
 }
+local module_destroyed = false
 
 
 
@@ -106,14 +101,14 @@ end
 --- call every time the freecam updates, since deadline doesnt let us read or listen to the active camera mode
 function activate()
 	frames_without_update = 0
-	if freecam_active then return end
+	if freecam_active or module_destroyed then return end
 	freecam_active = true
 	
-	maid_active["activator-dlcomp_esp"] = esp.activator:Subscribe("dlcomp-freecam")
-	maid_active["client_input_group"] = map_inputs()
+	maid["activator-dlcomp_esp"] = esp.activator:Subscribe("dlcomp-freecam")
+	maid["client_input_group"] = map_inputs()
 
 	-- check if we're still in the freecam
-	maid_active["heartbeat-is_active"] = time.heartbeat("dlcomp-freecam-is_active", function()
+	maid["heartbeat-is_active"] = time.heartbeat("dlcomp-freecam-is_active", function()
 		frames_without_update += 1
 		if disable_after > frames_without_update then return end
 		disable()
@@ -123,7 +118,7 @@ function disable()
 	if not freecam_active then return end
 	freecam_active = false
 	
-	maid_active:DoCleaning()
+	maid:DoCleaning()
 end
 
 
@@ -135,6 +130,12 @@ end
 
 
 
+
+function module.destroy()
+	disable()
+	maid:DoCleaning()
+	module_destroyed = true
+end
 
 register_camera_mode("dlcomp_freecam", dlcomp_freecam)
 return module
