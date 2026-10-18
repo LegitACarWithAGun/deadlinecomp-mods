@@ -23,6 +23,7 @@ local freecam_active = false
 local inputs = {
 	sprint = false,
 	select_preset = false,
+	pitch_movement_toggle = false, -- if true, forward/back movement goes towards where your camera is pointed
 
 	moveStraight = 0,
 	moveStrafe = 0,
@@ -53,15 +54,17 @@ function dlcomp_freecam:update(dt: number)
 	-- rotation
 	self.rot_x -= self.mouse_delta.X
 	self.rot_y = math.clamp(self.rot_y - self.mouse_delta.Y, -math.pi/2, math.pi/2)
-	local new_dir = CFrame.Angles(0, self.rot_x, 0) * CFrame.Angles(self.rot_y, 0, 0)
+	local new_dir_yaw = CFrame.Angles(0, self.rot_x, 0)
+	local new_dir = new_dir_yaw * CFrame.Angles(self.rot_y, 0, 0)
 
 	-- movement speed
 	local horizontal_speed = inputs.sprint and 90 or 45
-	local vertical_speed = 90
-	-- movement
+	local vertical_speed = inputs.sprint and 90 or 45
 	local horizontal_dir = v3SafeUnit(Vector3.new(inputs.moveStrafe, 0, inputs.moveStraight)) * horizontal_speed
 	local vertical_dir = Vector3.new(0, inputs.moveVertical, 0) * vertical_speed
-	local move_dir = new_dir:VectorToWorldSpace(horizontal_dir) + vertical_dir
+	-- movement
+	local move_dir = inputs.pitch_movement_toggle and new_dir or new_dir_yaw
+	move_dir = move_dir:VectorToWorldSpace(horizontal_dir) + vertical_dir
 	
 	-- update
 	local last_pos = math.isfinite(self.camera_cframe.Position.Magnitude) and self.camera_cframe.Position or Vector3.new()
@@ -91,9 +94,14 @@ local function map_inputs(): ClientInputGroup
 	input_helper.cig_bind_double_axis(cig, {"move_left"}, {"move_right"}, function(value: number)
 		inputs.moveStrafe = value
 	end)
-	input_helper.cig_bind_double_axis(cig, {"move_down"}, {"move_up"}, function(value: number)
+	input_helper.cig_bind_double_axis(cig, {"move_down", "crouch", "prone"}, {"move_up", "space"}, function(value: number)
 		inputs.moveVertical = value
 	end)
+
+	-- toggles
+	cig:bind_user_setting(function()
+		inputs.pitch_movement_toggle = not inputs.pitch_movement_toggle
+	end, InputType.Began, "laser_toggle")
 
 	return cig
 end
