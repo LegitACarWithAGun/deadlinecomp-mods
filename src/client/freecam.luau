@@ -10,6 +10,9 @@ local module = {
 }
 
 -- config
+--- name to register the camera mode as, 
+--- using exactly `Freecam` prevents the user's weapons from being equippable
+local CAMERA_MODE_NAME = "Freecam"
 --- heartbeats (frames) to wait before disabling itself, 
 --- since deadline doesnt let us read or listen to the active camera mode
 local disable_after = 15
@@ -135,7 +138,8 @@ function module.destroy()
 	disable()
 	maid:DoCleaning()
 	module_destroyed = true
+	register_camera_mode(CAMERA_MODE_NAME, nil)
 end
 
-register_camera_mode("dlcomp_freecam", dlcomp_freecam)
+register_camera_mode(CAMERA_MODE_NAME, dlcomp_freecam)
 return module
