@@ -12,7 +12,7 @@ local module = {
 maid["activator-players"] = activator
 
 -- config
-local team_change_scan_frequency = 4 -- in seconds
+local team_change_scan_frequency = 1 -- in seconds
 
 local state = replicate.generate_state()
 
