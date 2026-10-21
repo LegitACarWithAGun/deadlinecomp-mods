@@ -1,11 +1,11 @@
 -- player highlights + markers
 -- currently just acts as a proxy for freecam
 
-local replicate = require("./replicate-client")
-local dlcomp_avatar = require("./avatar")
-local ui_helper = require("./ui-helper")
-local resolution = require("./resolution")
-local activator = require("../shared/activator").new("dlcomp-esp")
+local replicate = require("../replicate-client")
+local dlcomp_avatar = require("../avatar")
+local ui_helper = require("../ui-helper")
+local resolution = require("../resolution")
+local activator = require("../../shared/activator").new("dlcomp-esp")
 
 local module = {
 	activator = activator,

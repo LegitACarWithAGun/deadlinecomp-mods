@@ -1,9 +1,6 @@
---!strict
-
 local input_helper = require("./input-helper")
-local Maid = require("../shared/maid")
-local esp = require("./esp")
-local maid = Maid.new("dlcomp-freecam active")
+local esp = require("@self/esp")
+local maid = require("../shared/maid").new("dlcomp-freecam active")
 
 local module = {
 	maid = maid,
