@@ -1,10 +1,8 @@
 local input_helper = require("./input-helper")
 local esp = require("@self/esp")
-local maid = require("../shared/maid").new("dlcomp-freecam active")
+local Maid = require("../shared/maid")
 
-local module = {
-	maid = maid,
-}
+local module = {}
 
 -- config
 --- name to register the camera mode as, 
@@ -15,38 +13,54 @@ local CAMERA_MODE_NAME = "Freecam"
 local disable_after = 15
 
 -- state
-local frames_without_update = 0
-local freecam_active = false
-local inputs = {
-	sprint = false,
-	select_preset = false,
-	pitch_movement_toggle = false, -- if true, forward/back movement goes towards where your camera is pointed
-
-	moveStraight = 0,
-	moveStrafe = 0,
-	moveVertical = 0,
-}
+local active_freecam: dlcomp_freecam?
 local module_destroyed = false
 
 
 
 
-local dlcomp_freecam = {} :: camera_controller
+local dlcomp_freecam = {}
 dlcomp_freecam.__index = dlcomp_freecam
+type dlcomp_freecam = typeof(dlcomp_freecam.new())
+type dlcomp_freecam_full = dlcomp_freecam & camera_controller_provided
 
 function dlcomp_freecam.new()
+	if active_freecam then
+		active_freecam:destroy()
+	end
+
 	local self = {
+		maid = Maid.new("dlcomp-freecam-instance"),
+
 		camera_cframe = CFrame.new(-35.25, 135.662, 8.242),
 		rot_x = 0,
 		rot_y = 0,
+
+		--- not to be confused with the .input field that is added automatically
+		controls = {
+			sprint = false,
+			select_preset = false,
+			pitch_movement_toggle = false, -- if true, forward/back movement goes towards where your camera is pointed
+		
+			moveStraight = 0,
+			moveStrafe = 0,
+			moveVertical = 0,
+		},
+
+		frames_without_update = 0,
+		destroyed = false,
 	}
 
-	activate()
-	return setmetatable(self, dlcomp_freecam)
+	local instance = setmetatable(self, dlcomp_freecam)
+	instance:enable()
+	return instance
 end
 -- camera controls
-function dlcomp_freecam:update(dt: number)
-	activate()
+function dlcomp_freecam.update(self: dlcomp_freecam_full, dt: number)
+	if self:is_destroyed() then return end
+	self:enable()
+
+	local controls = self.controls
 
 	-- rotation
 	self.rot_x -= self.mouse_delta.X
@@ -55,78 +69,80 @@ function dlcomp_freecam:update(dt: number)
 	local new_dir = new_dir_yaw * CFrame.Angles(self.rot_y, 0, 0)
 
 	-- movement speed
-	local horizontal_speed = inputs.sprint and 90 or 45
-	local vertical_speed = inputs.sprint and 90 or 45
-	local horizontal_dir = v3SafeUnit(Vector3.new(inputs.moveStrafe, 0, inputs.moveStraight)) * horizontal_speed
-	local vertical_dir = Vector3.new(0, inputs.moveVertical, 0) * vertical_speed
+	local horizontal_speed = controls.sprint and 90 or 45
+	local vertical_speed = controls.sprint and 90 or 45
+	local horizontal_dir = v3SafeUnit(Vector3.new(controls.moveStrafe, 0, controls.moveStraight)) * horizontal_speed
+	local vertical_dir = Vector3.new(0, controls.moveVertical, 0) * vertical_speed
 	-- movement
-	local move_dir = inputs.pitch_movement_toggle and new_dir or new_dir_yaw
+	local move_dir = controls.pitch_movement_toggle and new_dir or new_dir_yaw
 	move_dir = move_dir:VectorToWorldSpace(horizontal_dir) + vertical_dir
 	
 	-- update
 	local last_pos = math.isfinite(self.camera_cframe.Position.Magnitude) and self.camera_cframe.Position or Vector3.new()
 	local new_pos = last_pos + move_dir * dt
 	self.camera_cframe = new_dir + new_pos
-
-	return nil
 end
 
-
-
-
-
---- listen to inputs and map them to the `inputs` object
-local function map_inputs(): ClientInputGroup
-	local cig = ClientInputGroup.new()
+--- listen to user inputs and map them to the `.controls` table
+function dlcomp_freecam.bind_inputs(self: dlcomp_freecam, cig: ClientInputGroup)
+	local controls = self.controls
 
 	-- sprint
 	input_helper.cig_bind_hold(cig, "run", function(holding: boolean)
-		inputs.sprint = holding
+		controls.sprint = holding
 	end)
 
 	-- movement
 	input_helper.cig_bind_double_axis(cig, {"move_forward"}, {"move_backward"}, function(value: number)
-		inputs.moveStraight = value
+		controls.moveStraight = value
 	end)
 	input_helper.cig_bind_double_axis(cig, {"move_left"}, {"move_right"}, function(value: number)
-		inputs.moveStrafe = value
+		controls.moveStrafe = value
 	end)
 	input_helper.cig_bind_double_axis(cig, {"move_down", "crouch", "prone"}, {"move_up", "space"}, function(value: number)
-		inputs.moveVertical = value
+		controls.moveVertical = value
 	end)
 
 	-- toggles
 	cig:bind_user_setting(function()
-		inputs.pitch_movement_toggle = not inputs.pitch_movement_toggle
+		controls.pitch_movement_toggle = not controls.pitch_movement_toggle
 	end, InputType.Began, "laser_toggle")
-
-	return cig
 end
-
-
 
 
 --- call every time the freecam updates, since deadline doesnt let us read or listen to the active camera mode
-function activate()
-	frames_without_update = 0
-	if freecam_active or module_destroyed then return end
-	freecam_active = true
-	
-	maid["activator-dlcomp_esp"] = esp.activator:Subscribe("dlcomp-freecam")
-	maid["client_input_group"] = map_inputs()
+function dlcomp_freecam.enable(self: dlcomp_freecam)
+	self.frames_without_update = 0
+	if active_freecam or self:is_destroyed() then return end
+	active_freecam = self
 
-	-- check if we're still in the freecam
-	maid["heartbeat-is_active"] = time.heartbeat("dlcomp-freecam-is_active", function()
-		frames_without_update += 1
-		if disable_after > frames_without_update then return end
-		disable()
+	-- dependencies
+	self.maid["activator-dlcomp_esp"] = esp.activator:Subscribe("dlcomp-freecam")
+
+	-- inputs
+	local cig = ClientInputGroup.new()
+	self.maid["client_input_group"] = cig
+	self:bind_inputs(cig)
+
+	-- continously check if we're still in the freecam
+	self.maid["heartbeat-is_active"] = time.heartbeat("dlcomp-freecam-is_active", function()
+		self.frames_without_update += 1
+		if disable_after > self.frames_without_update then return end
+		self:disable()
 	end)
 end
-function disable()
-	if not freecam_active then return end
-	freecam_active = false
-	
-	maid:DoCleaning()
+function dlcomp_freecam.disable(self: dlcomp_freecam)
+	self.maid:DoCleaning()
+	if active_freecam == self then
+		active_freecam = nil
+	end
+end
+function dlcomp_freecam.destroy(self: dlcomp_freecam)
+	self.destroyed = true
+	self:disable()
+end
+function dlcomp_freecam.is_destroyed(self: dlcomp_freecam)
+	return self.destroyed or module_destroyed
 end
 
 
@@ -140,9 +156,10 @@ end
 
 
 function module.destroy()
-	disable()
-	maid:DoCleaning()
 	module_destroyed = true
+	if active_freecam then
+		active_freecam:destroy()
+	end
 	register_camera_mode(CAMERA_MODE_NAME, nil)
 end
 
