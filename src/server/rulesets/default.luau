@@ -64,3 +64,6 @@ sharedvars.gm_match_time_minutes = 8 -- round command uses this as a default
 
 -- finish
 geneva.toggle_rules(true) -- this also announces the ruleset in chat
+
+-- quick reference, prints frequently used comp commands to console
+require("../command-reference").print_command_reference()
