@@ -6,7 +6,7 @@ local dlcomp_table = require("./table")
 local Activator = {}
 Activator.__index = Activator
 
-export type Activator = typeof(Activator.new("__typing"))
+export type Activator = typeof(Activator.new("__type_info"))
 
 function Activator.new(origin: string)
 	local self = {
@@ -14,6 +14,7 @@ function Activator.new(origin: string)
 		OnDisable = Signal.new() :: Signal<>,
 		maid = Maid.new(`dlcomp-activator-{origin}`),
 		
+		_is_active = false,
 		_subscribers = {} :: {string},
 		_binds = {} :: {() -> ()},
 		_origin = origin,
@@ -73,10 +74,16 @@ function Activator.Destroy(self: Activator): ()
 	self:_disable()
 end
 
+function Activator.IsActive(self: Activator): boolean
+	return self._is_active
+end
+
 function Activator._enable(self: Activator)
+	self._is_active = true
 	self.OnEnable:Fire()
 end
 function Activator._disable(self: Activator)
+	self._is_active = false
 	self.OnDisable:Fire()
 
 	self.maid:Destroy()
