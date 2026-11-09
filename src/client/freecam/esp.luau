@@ -151,7 +151,7 @@ activator.OnEnable:Connect(function()
 	activator.maid["replicate-update"] = replicate.signal_player_update:Connect(function(username: string)
 		update_highlight(username)
 	end)
-	activator.maid["avatar-loaded"] = dlcomp_avatar.signal_model_loaded:Connect(update_highlight)
+	activator.maid["avatar-loaded"] = dlcomp_avatar.avatar_loaded:Connect(update_highlight)
 end)
 
 activator.OnDisable:Connect(function()
