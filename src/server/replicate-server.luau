@@ -113,6 +113,7 @@ activator.OnEnable:Connect(function()
 
 	-- map changed
 	activator.maid["signal-map_changed"] = game_data.map_code.changed:Connect(set_map)
+	set_map(game_data.map_code.value)
 end)
 
 -- subscribe/unsubscribe requests
