@@ -25,6 +25,7 @@ activator.OnEnable:Connect(function()
 
 	activator.maid["network-init"] = network.listen(replicate.NETWORK_INITAL, function(new_state: replicate.state)
 		module.state = new_state
+		module.is_loaded = true
 		module.self_info = new_state.players[local_player]
 		module.signal_inital:Fire()
 	end)
