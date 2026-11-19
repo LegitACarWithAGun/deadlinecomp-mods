@@ -20,6 +20,15 @@ local geneva = require("@self/geneva")
 geneva.load_ruleset("test_cup")
 geneva.toggle_rules(true)
 
+-- load staff
+local command_bot = require("@self/command-bot")
+command_bot.add_admin(
+	-- refs
+	"LegitACarWithAGun", "areoseka", "Mango911473", "tezukology",
+	-- trial refs
+	"eifwehuy", "Inhale_8632", "killmasterpro", "korbi3105", "glory_leaves", "MeNoCare_1", "Petrumetru23224", "Thetruesaint432", "wsznmyhero", "xalwaleedx", "ZanderFolf", "Simonupd"
+)
+
 -- workaround to allow running commands through the console
 shared.dlcomp_command_bot = require("@self/command-bot")
 return nil
