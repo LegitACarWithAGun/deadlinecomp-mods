@@ -110,11 +110,11 @@ function remove_value<T>(tbl: {T}, value: T)
     end
 end
 -- inserts the value if an identical value isnt in the table already
-function append_unique<T>(tbl: {T}, value: T)
-    if contains(tbl, value) then
-        return
+function append_unique<T>(tbl: {T}, ...: T)
+    for _, value in {...} do
+        if contains(tbl, value) then continue end
+        table.insert(tbl, value)
     end
-    table.insert(tbl, value)
 end
 
 function get_keys<k>(tbl: {[k]: any}): {k}
