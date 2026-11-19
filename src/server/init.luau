@@ -1,9 +1,16 @@
--- qol sharedvars
-sharedvars.gm_team_balancing_threshold = 9999
-sharedvars.chat_tips_enabled = false
-sharedvars.gm_team_scrambling = false
-sharedvars.plr_freecam_fov = 90
-sharedvars.gm_match_time_minutes = 8 -- round command uses this as a default
+local maid = require("./shared/maid").new("dlcomp-init")
+
+maid["sharedvars-qol"] = require("./shared/temp-sharedvars").New("dlcomp-init", 0, {
+	-- team / roster
+	gm_team_balancing_threshold = 9999,
+	gm_team_scrambling = false,
+	-- ref
+	plr_freecam_fov = 90,
+	gm_match_time_minutes = 8, -- round command uses this as a default
+	-- small obstructions
+	chat_tips_enabled = false,
+	dbg_editor_disable_tutorial = true,
+}):Enable()
 
 -- load modules
 require("@self/command-bot")
@@ -31,4 +38,6 @@ command_bot.add_admin(
 
 -- workaround to allow running commands through the console
 shared.dlcomp_command_bot = require("@self/command-bot")
-return nil
+return {
+	maid = maid
+}

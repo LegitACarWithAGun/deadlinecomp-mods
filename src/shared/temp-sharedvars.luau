@@ -18,6 +18,7 @@ local sharedvars = sharedvars :: _indexable_sv
 export type opt_sharedvars = dlcomp_type.set_properties_optional<_indexable_sv>
 
 export type TempSharedvars = typeof(TempSharedvars.New("__type_info", -1, {}))
+--- disabled by default
 function TempSharedvars.New(name: string, priority: number, values: opt_sharedvars)
 	local instance = setmetatable({
 		name = name,
@@ -61,8 +62,8 @@ function TempSharedvars.Toggle(self: TempSharedvars, toggle: boolean?)
 		self:Disable()
 	end
 end
-function TempSharedvars.Enable(self: TempSharedvars)
-	if self.enabled then return end
+function TempSharedvars.Enable(self: TempSharedvars): TempSharedvars
+	if self.enabled then return self end
 	self.enabled = true
 
 	local index = getIndexOrInsert(self)
@@ -70,6 +71,7 @@ function TempSharedvars.Enable(self: TempSharedvars)
 		if hasGreater(k, index) then continue end -- a greater value is being used
 		applyValue(k, v)
 	end
+	return self
 end
 -- returns the index of the instance, used internally
 function TempSharedvars.Disable(self: TempSharedvars): number?
