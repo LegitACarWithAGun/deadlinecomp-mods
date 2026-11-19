@@ -18,12 +18,12 @@ local sharedvars = sharedvars :: _indexable_sv
 export type opt_sharedvars = dlcomp_type.set_properties_optional<_indexable_sv>
 
 export type TempSharedvars = typeof(TempSharedvars.New("__type_info", -1, {}))
-function TempSharedvars.New(identifier: string, priority: number, values: opt_sharedvars)
+function TempSharedvars.New(name: string, priority: number, values: opt_sharedvars)
 	local instance = setmetatable({
+		name = name,
 		priority = priority,
 		values = values,
 		enabled = false,
-		destroyed = false,
 	}, TempSharedvars)
 
 	return instance
@@ -73,9 +73,14 @@ function TempSharedvars.Enable(self: TempSharedvars)
 end
 -- returns the index of the instance, used internally
 function TempSharedvars.Disable(self: TempSharedvars): number?
+	if not self.enabled then return nil end
 	self.enabled = false
+
 	local index = getInstanceIndex(self)
-	if not index then return nil end
+	if not index then
+		warn(`tempsharedvar {self.name} is enabled but destroyed`)
+		return nil
+	end
 
 	for k, v in self.values do
 		if hasGreater(k, index) then continue end -- a greater value is being used
@@ -114,8 +119,7 @@ end
 
 -- read / push helpers for sorted_instances
 function getIndexOrInsert(self: TempSharedvars): number
-	self.destroyed = false
-	return not self.destroyed and getInstanceIndex(self) or insertInstance(self)
+	return getInstanceIndex(self) or insertInstance(self)
 end
 function getInstanceIndex(self: TempSharedvars): number?
 	return table.find(sorted_instances, self)
