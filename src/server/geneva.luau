@@ -21,7 +21,7 @@ local enforce_rules = false -- whether the rules are active
 local announce_equipment_cleaning = true -- announces in chat what equipment was removed from a player's loadout, does not affect rules themselves
 
 -- constants
-local slot_order = {"primary", "secondary", "throwable1", "throwable2"}
+local slot_order = {"primary", "secondary", "throwable1", "throwable2", "melee"}
 local known_weapon_types = {"weapon", "throwable", "healing"}
 local limited_utility: {string} = {"F1", "M67", "M84", "Zarya3", "M8HC", "RGD2", "Molotov"} -- these count towards max_equippable_grenades
 
