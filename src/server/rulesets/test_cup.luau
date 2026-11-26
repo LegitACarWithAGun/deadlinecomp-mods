@@ -6,10 +6,10 @@ return geneva.register_ruleset({
 		-- launchers
 		"RPG7",
 		"PSRL",
+		-- bugged reload sounds
+		"SCALAR",
 		-- throwables
 		"M67",
-		"M84",
-		"Zarya3",
 		"Molotov",
 		-- unaccessible in UI
 		"Turret",
