@@ -23,7 +23,7 @@ local announce_equipment_cleaning = true -- announces in chat what equipment was
 -- constants
 local slot_order = {"primary", "secondary", "throwable1", "throwable2", "melee"}
 local known_weapon_types = {"weapon", "throwable", "healing"}
-local limited_utility: {string} = {"F1", "M67", "M84", "Zarya3", "M8HC", "RGD2", "Molotov"} -- these count towards max_equippable_grenades
+local limited_utility: {string} = {"F1", "M67", "M84", "Zarya3", "M8HC", "RGD2", "Molotov", "Crayon"} -- these count towards max_equippable_grenades
 
 -- misc state
 local sharedvars_ruleset = TempSharedvars.New("dlcomp-geneva-ruleset", 200, {})
