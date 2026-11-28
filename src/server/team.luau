@@ -2,11 +2,17 @@ local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
 local dlcomp_table = require("../shared/table")
 local dlcomp_string = require("../shared/string")
+local TempSharedvars = require("../shared/temp-sharedvars")
 local maid = require("../shared/maid").new("dlcomp-team")
 
 local rosters: {[team_id]: {string}} = {}
 local max_spawned: {[team_id]: number} = {}
 local all_team_ids: {team_id} = {"attacker", "defender"}
+
+local roster_sharedvars = TempSharedvars.New("dlcomp-team", 500, {
+    gm_team_balancing_threshold = -1, -- prevents players from switching teams from the menu
+    gm_team_scrambling = false, -- prevents automatic team scrambling
+})
 
 do -- helpers
     function get_other_team(team: team_id): team_id
@@ -72,11 +78,11 @@ end
 
 do -- roster update
     function enable_rosters()
-        sharedvars.gm_team_balancing_threshold = -1
+        roster_sharedvars:Enable()
     end
     function disable_rosters()
         rosters = {}
-        sharedvars.gm_team_balancing_threshold = 99
+        roster_sharedvars:Disable()
     end
 
     function clear_roster(team: team_id?): string
@@ -487,6 +493,8 @@ do -- event listeners
         update_team(player)
     end)
 end
+
+maid["sharedvars-rosters"] = roster_sharedvars
 
 return{
     rosters = rosters,

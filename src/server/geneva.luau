@@ -8,33 +8,60 @@ local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
 local dlcomp_table = require("../shared/table")
 local maid = require("../shared/maid").new("dlcomp-geneva")
+local TempSharedvars = require("../shared/temp-sharedvars")
 
 -- rules
 local banned_weapon_list: {string} = {}
 local max_equippable_grenades: number = 2
-local limited_utility: {string} = {"F1", "M67", "M84", "Zarya3", "M8HC", "RGD2", "Molotov"} -- these count towards max_equippable_grenades
-local custom_rules: {custom_geneva_rule} = {}
+local custom_rules: custom_rules = {}
+local rulesets: {[string]: ruleset} = {}
 
 -- behaviour
-local enforce_rules = true -- whether the rules are active
+local enforce_rules = false -- whether the rules are active
 local announce_equipment_cleaning = true -- announces in chat what equipment was removed from a player's loadout, does not affect rules themselves
 
 -- constants
-local slot_order = {"primary", "secondary", "throwable1", "throwable2"}
+local slot_order = {"primary", "secondary", "throwable1", "throwable2", "melee"}
 local known_weapon_types = {"weapon", "throwable", "healing"}
+local limited_utility: {string} = {"F1", "M67", "M84", "Zarya3", "M8HC", "RGD2", "Molotov", "Crayon"} -- these count towards max_equippable_grenades
 
-export type geneva_context = {
-    --- warning/info about the loadout, key being the slot name
-    feedback: {[string]: string},
-    --- how many more grenades the player can have
-    allowed_nades_left: number,
+-- misc state
+local sharedvars_ruleset = TempSharedvars.New("dlcomp-geneva-ruleset", 200, {})
+
+export type context = {
+    feedback: {[string]: string}, --- warning/info about the loadout, key being the slot name
+    allowed_nades_left: number, --- how many more grenades the player can have
 }
-export type custom_geneva_rule = {
+export type custom_rule_callback = (player: player, context) -> ()
+type custom_rules = {[string]: custom_rule_callback}
+export type ruleset = {
     name: string,
-    callback: (player: player, geneva_context) -> string?
+    banned_weapons: {string}?,
+    max_grenades: number?,
+    custom_rules: custom_rules?,
+    sharedvars: TempSharedvars.opt_sharedvars?,
 }
 
 do -- human-facing command-line stuff
+    function load_ruleset(name: string)
+        local ruleset = rulesets[name]
+        if not ruleset then
+            warn("unknown ruleset", name)
+            return
+        end
+        set_banned_weapons(ruleset.banned_weapons or {})
+        set_max_grenades(ruleset.max_grenades or 2)
+        set_custom_rules(ruleset.custom_rules or {})
+        sharedvars_ruleset:SetValues(ruleset.sharedvars or {})
+    end
+
+    function register_ruleset(ruleset: ruleset): ruleset
+        if rulesets[ruleset.name] then
+            warn(`overriding ruleset {ruleset.name}`)
+        end
+        rulesets[ruleset.name] = ruleset
+        return ruleset
+    end
 
     -- rules:
     function set_banned_weapons(new_bans: {string})
@@ -47,7 +74,7 @@ do -- human-facing command-line stuff
         banned_weapon_list = new_bans
     end
 
-    function set_custom_rules(new_rules: {custom_geneva_rule})
+    function set_custom_rules(new_rules: custom_rules): ()
         custom_rules = new_rules
     end
 
@@ -68,8 +95,9 @@ do -- human-facing command-line stuff
             enabled = not enforce_rules
         end
         enforce_rules = enabled
+        sharedvars_ruleset:Toggle(enforce_rules)
 
-        print(`enforce_rules = {enabled}`)
+        print(`enforce_rules = {enforce_rules}`)
         chat.send_announcement(`GENEVA rules have been {enforce_rules and "enabled" or "disabled"}`)
         if enforce_rules then
             announce_ruleset()
@@ -98,22 +126,19 @@ do -- human-facing command-line stuff
         chat.send_announcement(`- banned weapons: { format_list(banned_weapon_list) }`)
         chat.send_announcement(`- max equippable grenades: {max_equippable_grenades}`)
 
-        local custom_rule_names = {}
-        for _, rule in custom_rules do
-            table.insert(custom_rule_names, rule.name)
-        end
+        local custom_rule_names = dlcomp_table.get_keys(custom_rules)
         chat.send_announcement(`- custom rules: { format_list(custom_rule_names) }`)
     end
 end
 
 do -- helper functions
-    function clear_slot(player: player, context: geneva_context, slot: string, reason: string): ()
+    function clear_slot(player: player, context: context, slot: string, reason: string): ()
         context.feedback[slot] = reason
         player.set_weapon(slot, "nothing")
     end
 
     -- returns true if weapon type is unknown
-    function remove_if_unknown_weapon_type(player: player, context: geneva_context, slot: string, weapon: weapon_data): boolean
+    function remove_if_unknown_weapon_type(player: player, context: context, slot: string, weapon: weapon_data): boolean
         local success, weapon_type = pcall(function() return weapon.type end, weapon)
         if not success then
             clear_slot(player, context, slot, `failed to get weapon type: {weapon_type}`)
@@ -204,7 +229,7 @@ do -- implementation
         return table.concat(formatted_list, ", ")
     end
 
-    function handle_slot(player: player, slot_name: string, slot_bans: {string}, context: geneva_context)
+    function handle_slot(player: player, slot_name: string, slot_bans: {string}, context: context)
         local equipment = player.get_weapon_data_from_character(slot_name)
         if not equipment then
             return
@@ -243,7 +268,7 @@ do -- implementation
             return
         end
 
-        local context: geneva_context = {
+        local context: context = {
             feedback = {},
             allowed_nades_left = max_equippable_grenades,
         }
@@ -258,8 +283,8 @@ do -- implementation
         end
 
         -- apply custom rules
-        for _, rule in custom_rules do
-            rule.callback(player, context)
+        for name, rule in custom_rules do
+            rule(player, context)
         end
 
         -- print feedback
@@ -286,9 +311,28 @@ maid["cmd-announce"] = command_bot.add_command("geneva_announce", "toggles wheth
     announce_equipment_cleaning = toggle
     return `geneva's equipment enforcement announcements are {toggle and "Enabled" or "Disabled"}`
 end)
+maid["cmd-ruleset"] = command_bot.add_command("geneva_ruleset", "set the ruleset to", function(args: string)
+    local name, _ = arg_parser.get_string(args)
+
+    local ruleset = rulesets[name]
+    if not ruleset then
+        -- print known rulesets
+        local ruleset_names = dlcomp_table.get_keys(rulesets)
+        return table.concat(ruleset_names, " ")
+    end
+
+    load_ruleset(name)
+    toggle_rules(true)
+    return `loaded ruleset {name}`
+end)
+
+maid["sharedvars-ruleset"] = sharedvars_ruleset
 
 return {
     -- rules
+    rulesets = rulesets,
+    load_ruleset = load_ruleset,
+    register_ruleset = register_ruleset,
     toggle_rules = toggle_rules,
     set_banned_weapons = set_banned_weapons,
     set_max_grenades = set_max_grenades,

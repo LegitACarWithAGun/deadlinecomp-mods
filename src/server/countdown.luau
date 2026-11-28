@@ -6,16 +6,21 @@
 -- load command bot
 local command_bot = require("./command-bot")
 local arg_parser = require("../shared/arg-parser")
+local TempSharedvars = require("../shared/temp-sharedvars")
 local maid = require("../shared/maid").new("dlcomp-countdown")
 
 local active_countdown: thread?
 local countdown_ended = Signal.new()
 
+local freeze_sharedvars = TempSharedvars.New("dlcomp-countdown", 1000, {
+    plr_speed = 0.05, -- 0 seems to completely despawn your gun? lol
+})
+
 function freeze()
-    sharedvars.plr_speed = 0.05 -- 0 seems to completely despawn your gun? lol
+    freeze_sharedvars:Enable()
 end
 function unfreeze()
-    sharedvars.plr_speed = 1
+    freeze_sharedvars:Disable()
 end
 
 do -- countdown implementation
@@ -90,6 +95,8 @@ maid["cmd-unfreeze"] = command_bot.add_command("unfreeze", "lets the players wal
 end)
 
 maid["module"] = function()
+    freeze_sharedvars:Destroy()
+    cancel_countdown()
     unfreeze()
 end
 

@@ -5,7 +5,7 @@
 	"bundles": [
 		{
 			"name": "dlcomp_server",
-			"entry": "./src/server/rulesets/default.luau",
+			"entry": "./src/server/init.luau",
 			"output": "server.luau"
 		},
 		{

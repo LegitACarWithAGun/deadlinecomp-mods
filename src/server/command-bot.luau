@@ -71,6 +71,11 @@ function toggle_admin(player_name: string, toggle: boolean?): (boolean, string)
         return true, `removed [{player_name}]'s admin powers`
     end
 end
+function add_admin(...: string): ()
+    for _, name in {...} do
+        toggle_admin(name, true)
+    end
+end
 
 function toggle_command_permissions(toggle: boolean?)
     if toggle == nil then
@@ -210,12 +215,13 @@ end)
 -- note that sharedvars.vip_owner currently seems to change when the host leaves or someone else joins first
 -- function_caller is a better way to get the server owner's name, but is nil if ran from the autorun
 local default_admin = function_caller or sharedvars.vip_owner
-toggle_admin(default_admin, true)
+add_admin(default_admin)
 
 chat.send_announcement(`loaded dlcomp_command_bot; default admin is [{default_admin}]; say {prefix}help to get a list of commands`)
 return {
     add_command = add_command,
     toggle_admin = toggle_admin,
+    add_admin = add_admin,
     toggle_command_permissions = toggle_command_permissions,
     run = run,
     admin_list = admin_list,
